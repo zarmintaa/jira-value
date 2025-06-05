@@ -1,0 +1,315 @@
+<template>
+  <div class="error-notifications">
+    <!-- Toast notifications untuk errors -->
+    <Transition name="slide-fade" appear>
+      <div
+        v-if="activeError"
+        class="error-toast"
+        :class="getErrorClass(activeError.type)"
+      >
+        <div class="error-content">
+          <div class="error-icon">
+            {{ getErrorIcon(activeError.type) }}
+          </div>
+          <div class="error-text">
+            <h4 class="error-title">{{ activeError.title }}</h4>
+            <p class="error-message">{{ activeError.message }}</p>
+            <small class="error-time">
+              {{ formatTime(activeError.timestamp) }}
+            </small>
+          </div>
+          <div class="error-actions">
+            <button
+              v-if="activeError.details"
+              class="error-details-btn"
+              @click="toggleDetails"
+              title="Show Details"
+            >
+              ℹ️
+            </button>
+            <button class="error-close" @click="dismissError" title="Close">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress bar untuk auto dismiss - sekarang 10 detik -->
+        <div class="error-progress">
+          <div class="error-progress-bar"></div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Error details modal -->
+    <div
+      v-if="showDetails && activeError"
+      class="error-modal-overlay"
+      @click="showDetails = false"
+    >
+      <div class="error-modal" @click.stop>
+        <div class="error-modal-header">
+          <h3>Error Details</h3>
+          <button @click="showDetails = false">×</button>
+        </div>
+        <div class="error-modal-body">
+          <p><strong>Type:</strong> {{ activeError.type }}</p>
+          <p><strong>Status:</strong> {{ activeError.statusCode || "N/A" }}</p>
+          <p>
+            <strong>Time:</strong> {{ activeError.timestamp.toLocaleString() }}
+          </p>
+          <p><strong>Message:</strong> {{ activeError.message }}</p>
+          <div v-if="activeError.details">
+            <strong>Details:</strong>
+            <pre>{{ JSON.stringify(activeError.details, null, 2) }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { useErrorStore } from "@/stores/error-store.ts";
+
+const { activeError, removeError } = useErrorStore();
+const showDetails = ref(false);
+
+const dismissError = () => {
+  const currentError = activeError.value;
+  if (currentError) {
+    console.log("🔴 Dismissing error:", currentError.id);
+    // Langsung remove tanpa markAsRead untuk immediate dismissal
+    removeError(currentError.id);
+  }
+};
+
+const toggleDetails = () => {
+  showDetails.value = !showDetails.value;
+};
+
+const getErrorClass = (type: string) => {
+  const classes = {
+    api: "error-api",
+    validation: "error-validation",
+    network: "error-network",
+    general: "error-general",
+  };
+  return classes[type as keyof typeof classes] || "error-general";
+};
+
+const getErrorIcon = (type: string) => {
+  const icons = {
+    api: "🔴",
+    validation: "⚠️",
+    network: "📡",
+    general: "❌",
+  };
+  return icons[type as keyof typeof icons] || "❌";
+};
+
+const formatTime = (date: Date) => {
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+</script>
+
+<style scoped>
+.error-notifications {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  max-width: 400px;
+}
+
+.error-toast {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  margin-bottom: 10px;
+  border-left: 4px solid;
+}
+
+.error-api {
+  border-left-color: #ef4444;
+}
+
+.error-validation {
+  border-left-color: #f59e0b;
+}
+
+.error-network {
+  border-left-color: #8b5cf6;
+}
+
+.error-general {
+  border-left-color: #6b7280;
+}
+
+.error-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  gap: 12px;
+}
+
+.error-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.error-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.error-title {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.error-message {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.error-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.error-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.error-details-btn,
+.error-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #9ca3af;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.error-details-btn:hover,
+.error-close:hover {
+  color: #4b5563;
+  background: #f3f4f6;
+}
+
+.error-progress {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.error-progress-bar {
+  height: 100%;
+  background: currentColor;
+  animation: progress 10s linear; /* Konsisten dengan auto-removal 10 detik */
+  opacity: 0.6;
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Transitions */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* Modal styles */
+.error-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.error-modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.error-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.error-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.error-modal-header button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.error-modal-body {
+  padding: 20px;
+}
+
+.error-modal-body p {
+  margin-bottom: 10px;
+}
+
+.error-modal-body pre {
+  background: #f3f4f6;
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  font-size: 12px;
+  max-height: 200px;
+}
+</style>
