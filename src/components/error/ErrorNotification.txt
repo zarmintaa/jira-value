@@ -1,11 +1,11 @@
 <template>
   <div class="error-notifications">
     <!-- Toast notifications untuk errors -->
-    <Transition name="slide-fade" appear>
+    <Transition appear name="slide-fade">
       <div
         v-if="activeError"
-        class="error-toast"
         :class="getErrorClass(activeError.type)"
+        class="error-toast"
       >
         <div class="error-content">
           <div class="error-icon">
@@ -22,12 +22,12 @@
             <button
               v-if="activeError.details"
               class="error-details-btn"
-              @click="toggleDetails"
               title="Show Details"
+              @click="toggleDetails"
             >
               ℹ️
             </button>
-            <button class="error-close" @click="dismissError" title="Close">
+            <button class="error-close" title="Close" @click="dismissError">
               ×
             </button>
           </div>
@@ -68,7 +68,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from "vue";
 import { useErrorStore } from "@/stores/error-store.ts";
 

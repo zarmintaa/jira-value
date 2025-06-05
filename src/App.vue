@@ -1,8 +1,8 @@
-<script setup lang="ts">
-import ErrorNotification from "@/components/error/ErrorNotification.vue";
+<script lang="ts" setup>
 import { useErrorStore } from "@/stores/error-store.ts";
 import { getErrorDetails, getErrorMessage } from "@/utils/error-helpers.ts";
-import { onMounted, onUnmounted, getCurrentInstance } from "vue";
+import { getCurrentInstance, onMounted, onUnmounted } from "vue";
+import ErrorNotificationList from "@/components/error/ErrorNotificationList.vue";
 
 const { addError } = useErrorStore();
 
@@ -86,7 +86,7 @@ onUnmounted(() => {
 <template>
   <div id="app">
     <router-view />
-    <ErrorNotification />
+    <ErrorNotificationList />
   </div>
 </template>
 

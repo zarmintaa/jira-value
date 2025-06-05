@@ -1,5 +1,5 @@
 // src/stores/error-store.ts
-import { reactive, computed } from "vue";
+import { computed, reactive } from "vue";
 import type { AxiosError } from "axios";
 
 export interface AppError {
@@ -65,7 +65,7 @@ const parseAxiosError = (error: AxiosError): Partial<AppError> => {
 export const useErrorStore = () => {
   const addError = (
     errorInput: Partial<AppError> | Error | AxiosError | string,
-    autoRemoveDelay: number = 10000, // Default 10 detik, konsisten dengan progress bar
+    autoRemoveDelay: number = 10000, // Default 10 detik
   ): AppError => {
     console.log("🔵 addError called with:", errorInput);
 
@@ -106,66 +106,79 @@ export const useErrorStore = () => {
     state.errors.unshift(error);
     state.currentError = error;
 
-    // Set auto-removal timer
+    console.log(
+      `🕒 Setting autoRemoveTimer for error ID: ${error.id}, Title: "${error.title}", Delay: ${autoRemoveDelay}ms`,
+    );
     error.autoRemoveTimer = setTimeout(() => {
-      console.log("⏰ Auto removing error:", error.id);
+      console.log(
+        `⏰ Auto removing error ID: ${error.id}, Title: "${error.title}" after ${autoRemoveDelay}ms`,
+      );
       removeError(error.id);
     }, autoRemoveDelay);
 
-    console.log("🟢 Error added to store:", error);
-    console.log("🟢 Current state:", {
-      errorsCount: state.errors.length,
-      currentError: state.currentError,
-    });
+    // Untuk debugging, lebih baik log salinan objek agar tidak terpengaruh perubahan selanjutnya
+    console.log("🟢 Error added to store:", JSON.parse(JSON.stringify(error)));
+    console.log("🟢 Current state.errors count:", state.errors.length);
 
     return error;
   };
 
   const removeError = (id: string): void => {
-    console.log("🔴 removeError called with ID:", id);
+    const errorIndex = state.errors.findIndex((err) => err.id === id);
 
-    const errorToRemove = state.errors.find((error) => error.id === id);
+    if (errorIndex > -1) {
+      const errorToRemove = state.errors[errorIndex];
+      console.log(
+        `🔴 removeError called for ID: ${id}, Title: "${errorToRemove.title}"`,
+      );
 
-    // Clear auto-removal timer jika ada
-    if (errorToRemove?.autoRemoveTimer) {
-      clearTimeout(errorToRemove.autoRemoveTimer);
-      delete errorToRemove.autoRemoveTimer;
-    }
+      if (errorToRemove.autoRemoveTimer) {
+        console.log(
+          `   Clearing autoRemoveTimer: ${errorToRemove.autoRemoveTimer} for error ID: ${id}`,
+        );
+        clearTimeout(errorToRemove.autoRemoveTimer);
+        delete errorToRemove.autoRemoveTimer;
+      }
 
-    const index = state.errors.findIndex((error) => error.id === id);
-    if (index > -1) {
-      state.errors.splice(index, 1);
-      console.log("🔴 Error removed from array");
-    }
+      state.errors.splice(errorIndex, 1);
+      console.log(
+        `   Error ID: ${id} removed from array. Errors left: ${state.errors.length}`,
+      );
 
-    if (state.currentError?.id === id) {
-      state.currentError = state.errors[0] || null;
-      console.log("🔴 Current error updated:", state.currentError);
+      if (state.currentError?.id === id) {
+        state.currentError = state.errors[0] || null;
+        console.log(
+          `   Current error updated to: ${state.currentError ? `ID: ${state.currentError.id}, Title: "${state.currentError.title}"` : "null"}`,
+        );
+      }
+    } else {
+      console.warn(`🔴 removeError: Error ID ${id} not found in state.errors.`);
     }
   };
 
   const clearAllErrors = (): void => {
-    // Clear semua timers sebelum clear errors
+    console.log("🔥 Clearing all errors. Current count:", state.errors.length);
     state.errors.forEach((error) => {
       if (error.autoRemoveTimer) {
+        console.log(`   Clearing timer for error ID: ${error.id}`);
         clearTimeout(error.autoRemoveTimer);
       }
     });
-
     state.errors = [];
     state.currentError = null;
+    console.log("🔥 All errors cleared. Current count:", state.errors.length);
   };
 
   const markAsRead = (id: string): void => {
-    console.log("👁️ markAsRead called with ID:", id);
-
+    console.log(`👁️ markAsRead called with ID: ${id}`);
     const error = state.errors.find((e) => e.id === id);
     if (error) {
       error.isRead = true;
-      console.log("👁️ Error marked as read:", error);
-
-      // Optional: Langsung remove setelah 300ms ketika di-mark as read
+      console.log(`👁️ Error ID: ${id} marked as read, Title: "${error.title}"`);
       setTimeout(() => {
+        console.log(
+          `👁️ Auto-removing marked-as-read error ID: ${id} after 300ms`,
+        );
         removeError(id);
       }, 300);
     }
@@ -183,18 +196,15 @@ export const useErrorStore = () => {
     state.isLoading = loading;
   };
 
-  // Simplified activeError - tidak perlu filter isRead karena sudah auto-remove
-  const activeError = computed(() => {
-    const result = state.currentError;
-    console.log("🔍 activeError computed:", result);
-    return result;
-  });
+  // Computed properties untuk di-expose ke komponen
+  const allErrors = computed(() => state.errors);
+  const activeError = computed(() => state.currentError); // Ini adalah currentError yang sudah di-compute
+  const isLoading = computed(() => state.isLoading);
 
   return {
-    errors: state.errors,
-    currentError: state.currentError,
-    isLoading: state.isLoading,
-    activeError,
+    allErrors, // Gunakan ini untuk iterasi di UI menampilkan semua notifikasi
+    currentError: activeError, // Tetap sediakan jika ada UI yang masih memakai 'currentError' tunggal
+    isLoading,
     addError,
     removeError,
     clearAllErrors,
@@ -205,27 +215,38 @@ export const useErrorStore = () => {
   };
 };
 
-// Global error handler utility
+// Global error handler utility (tetap sama)
 export const errorHandler = {
   async handle<T>(
     asyncFn: () => Promise<T>,
     errorMessage?: string,
   ): Promise<T | null> {
     const { addError, setLoading } = useErrorStore();
-
+    setLoading(true);
     try {
-      setLoading(true);
       return await asyncFn();
     } catch (error) {
+      // Memastikan error yang dilempar ke addError adalah objek yang sesuai atau string
+      let processedError: Partial<AppError> | Error | AxiosError | string;
       if (errorMessage) {
-        addError({
+        processedError = {
           message: errorMessage,
+          details: error, // error asli tetap disimpan di details
+          type: "general", // Default type
+        };
+      } else if (error instanceof Error) {
+        processedError = error; // Biarkan addError memprosesnya
+      } else if (typeof error === "string") {
+        processedError = error;
+      } else {
+        // Fallback jika error adalah unknown
+        processedError = {
+          message: "An unexpected error occurred.",
           details: error,
           type: "general",
-        });
-      } else {
-        addError(error as any);
+        };
       }
+      addError(processedError);
       return null;
     } finally {
       setLoading(false);
@@ -234,16 +255,25 @@ export const errorHandler = {
 
   catch(error: unknown, customMessage?: string): void {
     const { addError } = useErrorStore();
-
+    let processedError: Partial<AppError> | Error | AxiosError | string;
     if (customMessage) {
-      addError({
+      processedError = {
         message: customMessage,
         details: error,
         type: "general",
-      });
+      };
+    } else if (error instanceof Error) {
+      processedError = error;
+    } else if (typeof error === "string") {
+      processedError = error;
     } else {
-      addError(error as any);
+      processedError = {
+        message: "An unexpected error occurred from catch.",
+        details: error,
+        type: "general",
+      };
     }
+    addError(processedError);
   },
 
   validation(field: string, message: string): void {

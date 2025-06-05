@@ -1,6 +1,6 @@
 // src/utils/api.ts
-import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios from "axios";
 import { useErrorStore } from "@/stores/error-store.ts";
 
 // Konfigurasi base untuk API
