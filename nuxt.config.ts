@@ -7,4 +7,9 @@ export default defineNuxtConfig({
     "/": { redirect: { to: "/dashboard", statusCode: 301 } },
   },
   modules: ["@pinia/nuxt"],
+  runtimeConfig: {
+    baseUrl: process.env.JIRA_BASE_URL,
+    email: process.env.JIRA_API_EMAIL,
+    token: process.env.JIRA_API_TOKEN,
+  },
 });

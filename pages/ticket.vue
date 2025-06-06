@@ -3,7 +3,7 @@
 import { useSafeFetch } from "~/composable/useSafeFetch";
 import type { JiraIssue } from "~/types/jira";
 
-const issueId = "ITBOA-xxxxxx";
+const issueId = "ITBOA-13693";
 
 // Kita tidak perlu mendefinisikan semua field, cukup yang kita gunakan saja.
 

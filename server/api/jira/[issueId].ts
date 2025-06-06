@@ -1,13 +1,13 @@
 import { Buffer } from "node:buffer";
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
   // Ambil issueId dari URL, contoh: /api/jira/ITBOA-13693 -> 'ITBOA-13693'
   const issueId = event.context.params?.issueId;
-
   // Baca kredensial dan URL dari environment variables (aman)
-  const jiraEmail = process.env.JIRA_API_EMAIL;
-  const jiraToken = process.env.JIRA_API_TOKEN;
-  const jiraBaseUrl = process.env.JIRA_BASE_URL;
+  const jiraEmail = config.email;
+  const jiraToken = config.token;
+  const jiraBaseUrl = config.baseUrl;
 
   if (!issueId || !jiraEmail || !jiraToken || !jiraBaseUrl) {
     throw createError({

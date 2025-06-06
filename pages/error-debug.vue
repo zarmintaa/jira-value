@@ -46,12 +46,10 @@ const testValidationError = () =>
 const testApiCall = async () => {
   isLoadingApi.value = true;
   data.value = null;
-
   // useSafeFetch mengembalikan 'data' dan 'error' secara terpisah
   const { data: issueData, error } = await useSafeFetch<JiraIssue>(
-    "/api/jira/ITBOA-16349",
+    "/api/jira/ITBOA-13693",
   );
-
   // PERBAIKAN: Cek variabel 'error' yang ada di level atas.
   // Jika TIDAK ada error (error.value adalah null), dan issueData punya nilai,
   // maka kita bisa dengan aman mengatur datanya.
