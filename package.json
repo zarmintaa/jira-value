@@ -1,33 +1,30 @@
 {
-  "name": "jira-value",
+  "name": "nuxt-app",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@pinia/nuxt": "^0.11.1",
     "axios": "^1.9.0",
+    "dayjs": "^1.11.13",
     "lodash": "^4.17.21",
+    "nuxt": "^3.17.5",
     "pinia": "^3.0.3",
     "uuid": "^11.1.0",
-    "vue": "^3.5.13",
+    "vue": "^3.5.16",
+    "vue-chartjs": "^5.3.2",
     "vue-router": "^4.5.1",
-    "xlsx": "^0.18.5",
-    "chart.js": "^4.2.1",
-    "dayjs": "^1.11.13",
-    "gridjs-vue": "^5.0.4",
-    "vue-chartjs": "^5.0.1"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@nuxtjs/supabase": "^1.5.1",
     "@types/lodash": "^4.17.17",
-    "@types/xlsx": "^0.0.35",
-    "@vitejs/plugin-vue": "^5.2.3",
-    "@vue/tsconfig": "^0.7.0",
-    "typescript": "~5.8.3",
-    "vite": "^6.3.5",
-    "vue-tsc": "^2.2.8"
+    "@types/xlsx": "^0.0.35"
   }
 }
