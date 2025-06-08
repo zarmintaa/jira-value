@@ -34,7 +34,7 @@ const fetchAllSubtaskDetails = async () => {
     `Memulai fetch untuk ${allSubtasks.length} subtask secara serial...`,
   );
   loadingSubtasks.value = true;
-  subtaskDetails.value = []; // Kosongkan state
+  subtaskDetails.value = [];
 
   try {
     for (const subtask of allSubtasks) {
@@ -43,10 +43,9 @@ const fetchAllSubtaskDetails = async () => {
         console.log("Loop dihentikan karena komponen tidak lagi aktif.");
         return;
       }
-      // Kita menggunakan useFetch standar di sini karena useSafeFetch mungkin lebih kompleks untuk loop
       const { data: subtaskData } = await useFetch<JiraIssue>(
         `/api/jira/${subtask.key}`,
-        { key: `subtask-${subtask.key}` }, // Menambahkan key untuk caching per subtask
+        { key: `subtask-${subtask.key}` },
       );
       if (subtaskData.value) {
         subtaskDetails.value.push(subtaskData.value);
@@ -109,6 +108,10 @@ const allTimeEstimate = computed(() => {
 });
 
 const allTotalSubtaskDetail = computed(() => subtaskDetails.value.length);
+
+const countSubtasks = computed(
+  () => mainJiraIssue.value?.fields?.subtasks.length || 0,
+);
 
 function formatDuration(seconds: number | null): string {
   if (seconds == null || seconds === 0) {
@@ -268,12 +271,16 @@ onUnmounted(() => {
             <div class="detail-item p-3 border rounded bg-light">
               <p class="mb-1 text-muted">Time Estimate:</p>
 
-              <p v-if="displayTimeEstimate" class="fw-bold mb-0">
+              <p
+                v-if="displayTimeEstimate && !allTimeEstimate"
+                class="fw-bold mb-0"
+              >
                 {{ formatDuration(displayTimeEstimate) }}
               </p>
 
               <p v-else-if="loadingSubtasks" class="fw-bold mb-0 text-muted">
-                Calculating...
+                Calculating {{ allTotalSubtaskDetail }} from
+                {{ countSubtasks }} subtasks...
               </p>
 
               <p v-else class="fw-bold mb-0">

@@ -56,7 +56,7 @@ function parseDDMONYYYY(dateString: string): Date {
 }
 
 /*
-// --- Contoh Penggunaan (tetap sama) ---
+
 const tanggalString = "08JUN2025";
 const tanggalObjek = parseDDMONYYYY(tanggalString);
 

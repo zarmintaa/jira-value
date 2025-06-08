@@ -12,7 +12,7 @@ export interface JiraIssue {
         "48x48": string;
       };
     } | null; // assignee bisa jadi null
-    subtasks: JiraSubtask[] | null;
+    subtasks: JiraSubtask[] | [];
     created: string;
     issuetype?: {
       name: string;
