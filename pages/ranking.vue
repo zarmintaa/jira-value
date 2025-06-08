@@ -255,12 +255,12 @@ const rankedUsers = [
   <div class="mt-3">
     <div class="row g-4">
       <div
-        class="col-lg-4 col-md-6"
         v-for="(item, index) in rankedUsers"
         :key="item.rank"
         :style="{ 'animation-delay': `${index * 10 * 100}ms` }"
+        class="col-lg-6 col-sm-12"
       >
-        <CardRank :rank="item.rank" :user="item.user" :stats="item.stats" />
+        <CardRank :rank="item.rank" :stats="item.stats" :user="item.user" />
       </div>
     </div>
   </div>

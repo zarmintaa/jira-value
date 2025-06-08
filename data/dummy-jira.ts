@@ -2,6 +2,78 @@ import type { JiraUser } from "~/types/jira";
 
 export const dummyJiraUser: JiraUser[] = [
   {
+    key: "ITBOA-13584",
+    fields: {
+      summary: "Ammar Burhanudin Sayuti - 10092177",
+      status: {
+        name: "To-Do",
+      },
+      assignee: {
+        displayName: "BOA - Ammar Burhanuddin Sayuti",
+        emailAddress: "v.ammar.burhanudin@adira.co.id",
+        avatarUrls: {
+          "48x48": "",
+        },
+      },
+      description: "Jira IT BOA",
+      created: "2025-01-01",
+    },
+  },
+  {
+    key: "ITBOA-8884",
+    fields: {
+      summary: "Cut Melati Chairiyah - 51211354",
+      status: {
+        name: "To-Do",
+      },
+      assignee: {
+        displayName: "BOA - Cut Melati Chairiyah",
+        emailAddress: "v.cut.melati@adira.co.id",
+        avatarUrls: {
+          "48x48": "",
+        },
+      },
+      description: "Jira IT BOA",
+      created: "2025-01-01",
+    },
+  },
+  {
+    key: "ITBOA-3457",
+    fields: {
+      summary: "Syafira Indah Nurkafianti - 51205997",
+      status: {
+        name: "To-Do",
+      },
+      assignee: {
+        displayName: "BOA - Syafira Indah Nurkafianti",
+        emailAddress: "v.syafira.indah@adira.co.id",
+        avatarUrls: {
+          "48x48": "",
+        },
+      },
+      description: "Jira IT BOA",
+      created: "2025-01-01",
+    },
+  },
+  {
+    key: "ITBOA-13591",
+    fields: {
+      summary: "Abdurokhman - 10093487",
+      status: {
+        name: "To-Do",
+      },
+      assignee: {
+        displayName: "BOA - Abdurokhman",
+        emailAddress: "v.abdurokhman@adira.co.id",
+        avatarUrls: {
+          "48x48": "",
+        },
+      },
+      description: "Jira IT BOA",
+      created: "2025-01-01",
+    },
+  },
+  {
     key: "ITBOA-13693",
     fields: {
       summary: "Zarkasih Akhmad - 51206880",
@@ -12,12 +84,10 @@ export const dummyJiraUser: JiraUser[] = [
         displayName: "BOA - Zarkasih Akhmad",
         emailAddress: "v.zarkasih.akhmad@adira.co.id",
         avatarUrls: {
-          "48x48":
-            "https://secure.gravatar.com/avatar/b75dfc0abf1f03009625e9dd3843ffb1?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBA-0.png",
+          "48x48": "",
         },
       },
-      description:
-        "Develop and integrate the user authentication system, including registration, login, and password reset functionalities. Ensure secure handling of user credentials.",
+      description: "Jira IT BOA",
       created: "2025-01-01",
     },
   },
@@ -32,12 +102,10 @@ export const dummyJiraUser: JiraUser[] = [
         displayName: "BOA - Muhammad Iqbal Firdaus Mahendra",
         emailAddress: "v.iqbal.firdaus@adira.co.id",
         avatarUrls: {
-          "48x48":
-            "https://secure.gravatar.com/avatar/0b736bb1b94ee32977009876d070403a?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBM-3.png",
+          "48x48": "",
         },
       },
-      description:
-        "Develop and integrate the user authentication system, including registration, login, and password reset functionalities. Ensure secure handling of user credentials.",
+      description: "Jira IT BOA",
       created: "2025-01-01",
     },
   },

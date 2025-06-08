@@ -25,7 +25,7 @@ const menuItems = [
     routeName: "ranking",
     icon: IconChartLineUp,
   },
-  {
+  /*{
     name: "Error Debug",
     // Pastikan Anda punya file 'pages/error-debug.vue'
     routeName: "error-debug",
@@ -36,7 +36,7 @@ const menuItems = [
     // Pastikan Anda punya file 'pages/error-debug.vue'
     routeName: "ticket",
     icon: IconLabel,
-  },
+  },*/
 ];
 </script>
 

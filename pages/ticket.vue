@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { useSafeFetch } from "~/composable/useSafeFetch";
 // Pastikan path ke types/jira benar
 import type { JiraIssue } from "~/types/jira";
@@ -58,9 +58,10 @@ const {
               class="assignee-avatar"
             />
             {{ issue.fields.assignee.displayName }}
-            (<a :href="'mailto:' + issue.fields.assignee.emailAddress"
-          >{{ issue.fields.assignee.emailAddress }}</a
-          >)
+            (<a :href="'mailto:' + issue.fields.assignee.emailAddress">{{
+              issue.fields.assignee.emailAddress
+            }}</a
+            >)
           </strong>
           <strong v-else>Unassigned</strong>
         </p>
@@ -68,10 +69,10 @@ const {
         <div v-if="issue.fields.description">
           <h3>Deskripsi:</h3>
           <pre class="description-box">{{
-              typeof issue.fields.description === "string"
-                ? issue.fields.description
-                : JSON.stringify(issue.fields.description, null, 2)
-            }}</pre>
+            typeof issue.fields.description === "string"
+              ? issue.fields.description
+              : JSON.stringify(issue.fields.description, null, 2)
+          }}</pre>
         </div>
       </div>
     </div>
@@ -136,7 +137,9 @@ strong {
 }
 
 /* --- Loading State (Skeleton) --- */
-.loading-state, .error-state, .not-found-state {
+.loading-state,
+.error-state,
+.not-found-state {
   text-align: center;
   padding: 40px 20px;
   border: 1px solid #ddd;
@@ -151,6 +154,7 @@ strong {
   margin-top: 20px;
   animation: pulse-bg 1.5s infinite;
 }
+
 .skeleton-h2 {
   height: 30px;
   width: 80%;
@@ -158,6 +162,7 @@ strong {
   margin-bottom: 15px;
   border-radius: 4px;
 }
+
 .skeleton-p {
   height: 18px;
   width: 60%;
@@ -165,17 +170,25 @@ strong {
   margin-bottom: 10px;
   border-radius: 4px;
 }
+
 .skeleton-p.large {
   width: 70%;
 }
+
 .skeleton-p.small {
   width: 40%;
 }
 
 @keyframes pulse-bg {
-  0% { background-color: #f0f0f0; }
-  50% { background-color: #e0e0e0; }
-  100% { background-color: #f0f0f0; }
+  0% {
+    background-color: #f0f0f0;
+  }
+  50% {
+    background-color: #e0e0e0;
+  }
+  100% {
+    background-color: #f0f0f0;
+  }
 }
 
 /* --- Issue Details Specifics --- */

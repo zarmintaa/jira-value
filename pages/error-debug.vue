@@ -86,9 +86,9 @@ const testApiCall = async () => {
             7. Promise Reject (via errorHandler)
           </button>
           <button
+            :disabled="isLoadingApi"
             class="btn btn-success"
             @click="testApiCall"
-            :disabled="isLoadingApi"
           >
             <span v-if="isLoadingApi">Loading...</span>
             <span v-else>9. Real API Call (via useSafeFetch)</span>
@@ -133,51 +133,62 @@ const testApiCall = async () => {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .btn-primary {
   background-color: #0d6efd;
   color: white;
 }
+
 .btn-danger {
   background-color: #dc3545;
   color: white;
 }
+
 .btn-warning {
   background-color: #ffc107;
   color: black;
 }
+
 .btn-success {
   background-color: #198754;
   color: white;
 }
+
 .btn-dark {
   background-color: #212529;
   color: white;
 }
+
 .card {
   border: 1px solid #ddd;
   border-radius: 8px;
 }
+
 .card-body {
   padding: 1.5rem;
 }
+
 .debug-section {
   background: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
   margin: 20px 0;
 }
+
 .button-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
   margin-top: 15px;
 }
+
 .data-section {
   background: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
   margin: 20px 0;
 }
+
 pre {
   background: #e9ecef;
   padding: 10px;
@@ -185,6 +196,7 @@ pre {
   overflow-x: auto;
   font-size: 12px;
 }
+
 .error-list-item {
   border: 1px solid #eee;
   padding: 10px;

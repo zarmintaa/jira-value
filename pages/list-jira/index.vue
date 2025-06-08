@@ -1,7 +1,7 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { dummyJiraUser } from "~/data/dummy-jira";
-import { ref } from "vue";
 import type { Ref, UnwrapRef } from "vue";
+import { ref } from "vue";
 import type { JiraUser } from "~/types/jira";
 import TableView from "~/components/table/TableView.vue";
 
@@ -67,8 +67,8 @@ const navigateToJiraDetail = (row: any) => {
         :error="errorMessage"
         :items="allJira"
         :itemsPerPage="10"
-        :onRowClick="navigateToJiraDetail"
         :loading="loading"
+        :onRowClick="navigateToJiraDetail"
         :tHeader="headers"
         :tKey="rawKeys"
       />

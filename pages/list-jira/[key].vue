@@ -1,10 +1,14 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { useRoute } from "vue-router";
 import type { JiraIssue, JiraSubtask } from "~/types/jira";
 import { useSafeFetch } from "~/composable/useSafeFetch";
 
 const route = useRoute();
 const jiraKey = route.params.key as string;
+
+const subtaskDetails = ref<JiraIssue[]>([]);
+const loadingSubtasks = ref(false);
+let isComponentActive = true;
 
 console.log(`Fetching details for main Jira key: ${jiraKey}`);
 
@@ -15,30 +19,116 @@ const {
   error: mainIssueError, // Error for fetching the main issue
 } = await useSafeFetch<JiraIssue>(`/api/jira/${jiraKey}`, {
   lazy: true,
+  key: `issue-${jiraKey}`, // Menambahkan key untuk caching
 });
 
+// Fungsi untuk fetch semua subtask secara SERIAL (satu per satu)
+const fetchAllSubtaskDetails = async () => {
+  const allSubtasks: JiraSubtask[] = mainJiraIssue.value?.fields.subtasks || [];
+  if (allSubtasks.length === 0) {
+    console.log("Tidak ada subtask untuk di-fetch.");
+    return;
+  }
+
+  console.log(
+    `Memulai fetch untuk ${allSubtasks.length} subtask secara serial...`,
+  );
+  loadingSubtasks.value = true;
+  subtaskDetails.value = []; // Kosongkan state
+
+  try {
+    for (const subtask of allSubtasks) {
+      // cek apakah komponen aktif
+      if (!isComponentActive) {
+        console.log("Loop dihentikan karena komponen tidak lagi aktif.");
+        return;
+      }
+      // Kita menggunakan useFetch standar di sini karena useSafeFetch mungkin lebih kompleks untuk loop
+      const { data: subtaskData } = await useFetch<JiraIssue>(
+        `/api/jira/${subtask.key}`,
+        { key: `subtask-${subtask.key}` }, // Menambahkan key untuk caching per subtask
+      );
+      if (subtaskData.value) {
+        subtaskDetails.value.push(subtaskData.value);
+      }
+    }
+    console.log(
+      "Semua detail subtask berhasil di-fetch:",
+      subtaskDetails.value,
+    );
+  } catch (error) {
+    console.error("Gagal saat mem-fetch detail subtask:", error);
+  } finally {
+    loadingSubtasks.value = false;
+  }
+};
+
 // Computed properties for the main Jira issue details display
-const displayMainSummary = computed(
-  () => mainJiraIssue.value?.fields.summary || "Loading Summary...",
-);
+
 const displayMainStatus = computed(
   () => mainJiraIssue.value?.fields.status.name || "Unknown Status",
 );
 const displayMainAssignee = computed(
   () => mainJiraIssue.value?.fields.assignee?.displayName || "Unassigned",
 );
-const displayMainDescription = computed(
-  () => mainJiraIssue.value?.fields.description || "No description available.",
-);
+
 const mainIssueErrorMessage = computed(
   () => mainIssueError.value?.message || null,
 );
 const displayCreated = computed(
   () => mainJiraIssue.value?.fields.created || null,
 );
-const displayIssueType = computed(
-  () => mainJiraIssue.value?.fields?.issuetype?.name || null,
+
+const displayTimeEstimate = computed(
+  () => mainJiraIssue.value?.fields?.timeestimate || null,
 );
+
+// Gunakan 'watch' untuk memicu fetch subtask setelah fetch utama selesai
+watch(
+  mainJiraIssue,
+  (newIssue) => {
+    if (
+      newIssue &&
+      subtaskDetails.value.length === 0 &&
+      !loadingSubtasks.value
+    ) {
+      fetchAllSubtaskDetails();
+    }
+  },
+  {
+    immediate: true,
+  },
+);
+
+const allTimeEstimate = computed(() => {
+  // Gunakan .reduce() untuk menjumlahkan estimasi dari semua detail subtask
+  // `|| 0` memastikan jika timeestimate null/undefined, kita akan menambahkannya dengan 0
+  return subtaskDetails.value.reduce((total, subtask) => {
+    return total + (subtask.fields?.timeestimate || 0);
+  }, 0); // 0 adalah nilai awal total
+});
+
+const allTotalSubtaskDetail = computed(() => subtaskDetails.value.length);
+
+function formatDuration(seconds: number | null): string {
+  if (seconds == null || seconds === 0) {
+    return "0h";
+  }
+
+  // Menangani durasi lebih dari 24 jam dengan benar
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  let result = "";
+  if (hours > 0) {
+    result += `${hours}H `;
+  }
+  if (minutes > 0) {
+    result += `${minutes}m`;
+  }
+
+  return result.trim() || "0h";
+}
 
 // --- Helper function for status badges ---
 const getStatusBadgeClass = (status: string) => {
@@ -98,139 +188,143 @@ const router = useNuxtApp().$router;
 const navigateToJiraDetail = (row: any) => {
   router.push(`/list-jira/${row.key}`);
 };
+
+onUnmounted(() => {
+  console.log("Komponen di-unmount, proses fetch akan dihentikan.");
+  isComponentActive = false;
+});
 </script>
 
 <template>
-  <Layout>
-    <BreadCrumb />
-
-    <div class="card border-0 shadow-sm">
-      <div
-        class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
-      >
-        <h3 class="fw-semibold mb-0">Jira Issue Details: {{ jiraKey }}</h3>
-      </div>
-
-      <div class="card-body">
-        <h4 class="mb-4 text-primary">Main Issue: **{{ jiraKey }}**</h4>
-        <div v-if="loadingMainIssue" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p class="mt-3">Loading main issue details...</p>
-        </div>
-        <div
-          v-else-if="mainIssueErrorMessage"
-          class="alert alert-danger p-4"
-          role="alert"
-        >
-          <h5 class="alert-heading">Error Loading Issue!</h5>
-          <p>{{ mainIssueErrorMessage }}</p>
-          <hr />
-          <p class="mb-0">
-            Could not retrieve details for Jira key:
-            <strong class="text-danger">{{ jiraKey }}</strong
-            >. Please check the key or your connection.
-          </p>
-        </div>
-        <div v-else-if="mainJiraIssue" class="mb-4">
-          <div class="row g-3 mb-4">
-            <div class="col-md-6 col-lg-4">
-              <div class="detail-item p-3 border rounded bg-light">
-                <p class="mb-1 text-muted">Assignee:</p>
-                <p class="fw-bold mb-0 text-break">
-                  {{ displayMainAssignee }}
-                </p>
-              </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-              <div class="detail-item p-3 border rounded bg-light">
-                <p class="mb-1 text-muted">Key:</p>
-                <p class="fw-bold mb-0 text-break">
-                  {{ mainJiraIssue.key }}
-                </p>
-              </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-              <div class="detail-item p-3 border rounded bg-light">
-                <p class="mb-1 text-muted">Status:</p>
-                <span
-                  :class="['badge', getStatusBadgeClass(displayMainStatus)]"
-                  >{{ displayMainStatus }}</span
-                >
-              </div>
-            </div>
-
-            <div class="col-md-6 col-lg-4">
-              <div class="detail-item p-3 border rounded bg-light">
-                <p class="mb-1 text-muted">Created:</p>
-                <p class="fw-bold mb-0">
-                  {{
-                    displayCreated
-                      ? new Date(displayCreated).toLocaleString()
-                      : "N/A"
-                  }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <h6 class="mt-4 mb-2 text-primary border-bottom pb-2">
-            Description:
-          </h6>
-          <div
-            v-if="mainJiraIssue.fields.description"
-            class="description-content shadow-sm"
-          >
-            <pre>{{ displayMainDescription }}</pre>
-          </div>
-          <div v-else class="text-muted fst-italic p-3 bg-light rounded">
-            <p class="mb-0">No description available for this main issue.</p>
-          </div>
-        </div>
-        <div v-else class="text-center py-5">
-          <p class="lead">
-            <i class="bi bi-info-circle text-info me-2"></i>No main issue
-            details found for Jira key:
-            <strong class="text-info">{{ jiraKey }}</strong
-            >.
-          </p>
-          <p class="text-muted mt-2">
-            It might not exist, or the API returned no data.
-          </p>
-          <button @click="router.go(-1)" class="btn btn-outline-primary mt-3">
-            Go Back
-          </button>
-        </div>
-
-        <hr class="my-4" />
-        <h4 class="mb-3">Subtasks</h4>
-
-        <TableView
-          :error="mainIssueErrorMessage"
-          :items="subtasksForTable"
-          :itemsPerPage="10"
-          :onRowClick="navigateToJiraDetail"
-          :loading="loadingMainIssue"
-          :tHeader="subtaskHeaders"
-          :tKey="subtaskRawKeys"
-        >
-          <template
-            #no-items
-            v-if="
-              !loadingMainIssue &&
-              !mainIssueErrorMessage &&
-              subtasksForTable.length === 0
-            "
-          >
-            <div class="text-muted text-center py-3">
-              <p>No subtasks found for this Jira issue.</p>
-            </div>
-          </template>
-        </TableView>
-      </div>
+  <div class="card border-0 shadow-sm">
+    <div
+      class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
+    >
+      <h3 class="fw-semibold mb-0">Jira Issue Details: {{ jiraKey }}</h3>
     </div>
-  </Layout>
+
+    <div class="card-body">
+      <div v-if="loadingMainIssue" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Loading main issue details...</p>
+      </div>
+      <div
+        v-else-if="mainIssueErrorMessage"
+        class="alert alert-danger p-4"
+        role="alert"
+      >
+        <h5 class="alert-heading">Error Loading Issue!</h5>
+        <p>{{ mainIssueErrorMessage }}</p>
+        <hr />
+        <p class="mb-0">
+          Could not retrieve details for Jira key:
+          <strong class="text-danger">{{ jiraKey }}</strong
+          >. Please check the key or your connection.
+        </p>
+      </div>
+      <div v-else-if="mainJiraIssue" class="mb-4">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Assignee:</p>
+              <p class="fw-bold mb-0 text-break">
+                {{ displayMainAssignee }}
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Key:</p>
+              <p class="fw-bold mb-0 text-break">
+                {{ mainJiraIssue.key }}
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Status:</p>
+              <span
+                :class="['badge', getStatusBadgeClass(displayMainStatus)]"
+                >{{ displayMainStatus }}</span
+              >
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Created:</p>
+              <p class="fw-bold mb-0">
+                {{
+                  displayCreated
+                    ? new Date(displayCreated).toLocaleString()
+                    : "N/A"
+                }}
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Time Estimate:</p>
+
+              <p v-if="displayTimeEstimate" class="fw-bold mb-0">
+                {{ formatDuration(displayTimeEstimate) }}
+              </p>
+
+              <p v-else-if="loadingSubtasks" class="fw-bold mb-0 text-muted">
+                Calculating...
+              </p>
+
+              <p v-else class="fw-bold mb-0">
+                {{ formatDuration(allTimeEstimate) }} | Subtasks Total :
+                {{ allTotalSubtaskDetail }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-center py-5">
+        <p class="lead">
+          <i class="bi bi-info-circle text-info me-2"></i>No main issue details
+          found for Jira key: <strong class="text-info">{{ jiraKey }}</strong
+          >.
+        </p>
+        <p class="text-muted mt-2">
+          It might not exist, or the API returned no data.
+        </p>
+        <button class="btn btn-outline-primary mt-3" @click="router.go(-1)">
+          Go Back
+        </button>
+      </div>
+
+      <hr class="my-4" />
+      <h4 class="mb-3">Subtasks</h4>
+
+      <TableView
+        :error="mainIssueErrorMessage"
+        :items="subtasksForTable"
+        :itemsPerPage="10"
+        :loading="loadingMainIssue"
+        :onRowClick="navigateToJiraDetail"
+        :tHeader="subtaskHeaders"
+        :tKey="subtaskRawKeys"
+      >
+        <template
+          v-if="
+            !loadingMainIssue &&
+            !mainIssueErrorMessage &&
+            subtasksForTable.length === 0
+          "
+          #no-items
+        >
+          <div class="text-muted text-center py-3">
+            <p>No subtasks found for this Jira issue.</p>
+          </div>
+        </template>
+      </TableView>
+    </div>
+  </div>
 </template>
 <style scoped>
 .detail-item {
