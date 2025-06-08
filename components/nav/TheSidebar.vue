@@ -14,7 +14,7 @@ const menuItems = [
   },
   {
     name: "List Jira",
-    // Pastikan Anda punya file 'pages/list-jira.vue'
+    // Pastikan Anda punya file 'pages/old.vue'
     routeName: "list-jira", // Di Nuxt, nama rute biasanya kebab-case
     icon: IconUserGroups,
   },

@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   if (!issueId || !jiraEmail || !jiraToken || !jiraBaseUrl) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Konfigurasi server Jira tidak lengkap.",
+      statusMessage: "Invalid Configuration Or Invalid Credentials.",
     });
   }
 
