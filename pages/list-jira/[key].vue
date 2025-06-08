@@ -36,6 +36,28 @@ const mainIssueErrorMessage = computed(
 const displayCreated = computed(
   () => mainJiraIssue.value?.fields.created || null,
 );
+const displayIssueType = computed(
+  () => mainJiraIssue.value?.fields?.issuetype?.name || null,
+);
+
+// --- Helper function for status badges ---
+const getStatusBadgeClass = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "to do":
+      return "bg-secondary";
+    case "in progress":
+      return "bg-primary text-light"; // Changed to text-light for better contrast
+    case "done":
+    case "closed":
+      return "bg-success";
+    case "open":
+      return "bg-info";
+    case "reopened":
+      return "bg-warning text-dark"; // Changed to text-dark
+    default:
+      return "bg-dark";
+  }
+};
 
 // --- 2. Preparing data for the Subtasks TableView ---
 const subtasksForTable = computed(() => {
@@ -90,41 +112,95 @@ const navigateToJiraDetail = (row: any) => {
       </div>
 
       <div class="card-body">
-        <h4>Main Issue: **{{ jiraKey }}**</h4>
-        <div v-if="loadingMainIssue" class="text-center py-4">
-          <p>Loading main issue details...</p>
+        <h4 class="mb-4 text-primary">Main Issue: **{{ jiraKey }}**</h4>
+        <div v-if="loadingMainIssue" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3">Loading main issue details...</p>
         </div>
         <div
           v-else-if="mainIssueErrorMessage"
-          class="alert alert-danger"
+          class="alert alert-danger p-4"
           role="alert"
         >
-          <p>Error loading main issue: {{ mainIssueErrorMessage }}</p>
-          <p>Could not retrieve details for Jira key: **{{ jiraKey }}**.</p>
+          <h5 class="alert-heading">Error Loading Issue!</h5>
+          <p>{{ mainIssueErrorMessage }}</p>
+          <hr />
+          <p class="mb-0">
+            Could not retrieve details for Jira key:
+            <strong class="text-danger">{{ jiraKey }}</strong
+            >. Please check the key or your connection.
+          </p>
         </div>
-        <div v-else-if="mainJiraIssue" class="jira-details-card mb-4">
-          <h5>{{ displayMainSummary }}</h5>
-          <p><strong>Key:</strong> {{ mainJiraIssue.key }}</p>
-          <p><strong>Status:</strong> {{ displayMainStatus }}</p>
-          <p><strong>Assignee:</strong> {{ displayMainAssignee }}</p>
-          <p><strong>Created:</strong> {{ displayCreated }}</p>
+        <div v-else-if="mainJiraIssue" class="mb-4">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-4">
+              <div class="detail-item p-3 border rounded bg-light">
+                <p class="mb-1 text-muted">Assignee:</p>
+                <p class="fw-bold mb-0 text-break">
+                  {{ displayMainAssignee }}
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+              <div class="detail-item p-3 border rounded bg-light">
+                <p class="mb-1 text-muted">Key:</p>
+                <p class="fw-bold mb-0 text-break">
+                  {{ mainJiraIssue.key }}
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+              <div class="detail-item p-3 border rounded bg-light">
+                <p class="mb-1 text-muted">Status:</p>
+                <span
+                  :class="['badge', getStatusBadgeClass(displayMainStatus)]"
+                  >{{ displayMainStatus }}</span
+                >
+              </div>
+            </div>
 
-          <h6 class="mt-3">Description:</h6>
+            <div class="col-md-6 col-lg-4">
+              <div class="detail-item p-3 border rounded bg-light">
+                <p class="mb-1 text-muted">Created:</p>
+                <p class="fw-bold mb-0">
+                  {{
+                    displayCreated
+                      ? new Date(displayCreated).toLocaleString()
+                      : "N/A"
+                  }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="mt-4 mb-2 text-primary border-bottom pb-2">
+            Description:
+          </h6>
           <div
             v-if="mainJiraIssue.fields.description"
-            class="description-content"
+            class="description-content shadow-sm"
           >
             <pre>{{ displayMainDescription }}</pre>
           </div>
-          <div v-else class="text-muted">
-            <p>No description available for this main issue.</p>
+          <div v-else class="text-muted fst-italic p-3 bg-light rounded">
+            <p class="mb-0">No description available for this main issue.</p>
           </div>
         </div>
-        <div v-else class="text-center py-4">
-          <p>No main issue details found for Jira key: **{{ jiraKey }}**.</p>
-          <p class="text-muted">
-            It might not exist or the API returned no data.
+        <div v-else class="text-center py-5">
+          <p class="lead">
+            <i class="bi bi-info-circle text-info me-2"></i>No main issue
+            details found for Jira key:
+            <strong class="text-info">{{ jiraKey }}</strong
+            >.
           </p>
+          <p class="text-muted mt-2">
+            It might not exist, or the API returned no data.
+          </p>
+          <button @click="router.go(-1)" class="btn btn-outline-primary mt-3">
+            Go Back
+          </button>
         </div>
 
         <hr class="my-4" />
@@ -156,22 +232,48 @@ const navigateToJiraDetail = (row: any) => {
     </div>
   </Layout>
 </template>
-
 <style scoped>
-.jira-details-card {
-  border: 1px solid #dee2e6;
-  padding: 1.5rem;
-  border-radius: 0.375rem;
-  background-color: #f8f9fa;
-  margin-bottom: 1.5rem;
+.detail-item {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.detail-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .description-content {
   white-space: pre-wrap;
-  background-color: #e9ecef;
-  padding: 1rem;
-  border-radius: 0.25rem;
-  font-family: monospace;
+  background-color: #f0f4f7; /* Lighter background for description */
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  font-family:
+    "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
   word-break: break-word;
+  line-height: 1.6;
+  color: #343a40;
+}
+
+.badge {
+  font-size: 0.9em;
+  padding: 0.5em 0.8em;
+  border-radius: 0.375rem;
+}
+
+/* Custom styles for loading and error states */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+  border-width: 0.3em;
+}
+
+.alert-danger {
+  border-left: 5px solid #dc3545;
+}
+
+.text-primary {
+  color: #007bff !important; /* Ensure primary color is consistent */
 }
 </style>

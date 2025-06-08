@@ -2,6 +2,8 @@
 import IconUserGroups from "~/components/icons/IconUserGroups.vue";
 import IconHome from "~/components/icons/IconHome.vue";
 import IconLabel from "~/components/icons/IconLabel.vue";
+import IconChartLineUp from "~/components/icons/IconChartLineUp.vue";
+import IconAdministrator from "~/components/icons/IconAdministrator.vue";
 
 const route = useRoute();
 
@@ -16,7 +18,12 @@ const menuItems = [
     name: "List Jira",
     // Pastikan Anda punya file 'pages/old.vue'
     routeName: "list-jira", // Di Nuxt, nama rute biasanya kebab-case
-    icon: IconUserGroups,
+    icon: IconAdministrator,
+  },
+  {
+    name: "Ranking",
+    routeName: "ranking",
+    icon: IconChartLineUp,
   },
   {
     name: "Error Debug",

@@ -15,6 +15,9 @@ export interface JiraIssue {
     description: any; // Deskripsi Jira bisa sangat kompleks, `any` adalah jalan pintas yang aman
     subtasks: JiraSubtask[] | null;
     created: string;
+    issuetype?: {
+      name: string;
+    };
   };
 }
 
