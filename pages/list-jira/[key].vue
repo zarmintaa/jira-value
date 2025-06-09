@@ -2,6 +2,7 @@
 import { useRoute } from "vue-router";
 import type { JiraIssue, JiraSubtask } from "~/types/jira";
 import { useSafeFetch } from "~/composable/useSafeFetch";
+import { parseDDMONYYYY } from "~/utils/dateStringConverter";
 
 const route = useRoute();
 const jiraKey = route.params.key as string;
@@ -63,6 +64,9 @@ const fetchAllSubtaskDetails = async () => {
 };
 
 // Computed properties for the main Jira issue details display
+const displaySummary = computed(
+  () => mainJiraIssue.value?.fields.summary || "",
+);
 
 const displayMainStatus = computed(
   () => mainJiraIssue.value?.fields.status.name || "Unknown Status",
@@ -81,6 +85,65 @@ const displayCreated = computed(
 const displayTimeEstimate = computed(
   () => mainJiraIssue.value?.fields?.timeestimate || null,
 );
+
+const displayDateTask = computed(() =>
+  getDateFromSummary(displaySummary.value),
+);
+
+const displayPointrate = computed(() => {
+  if (subtaskDetails.value.length !== 0) {
+    return null;
+  }
+
+  const dateSummary = getDateFromSummary(
+    mainJiraIssue.value?.fields?.summary || "",
+  );
+  const dateCreated = mainJiraIssue.value?.fields?.created;
+
+  console.log({ dateSummary, dateCreated });
+
+  if (dateSummary && dateCreated) {
+    const jiraOnTime = isSameDay(
+      parseDDMONYYYY(dateSummary),
+      parseDDMONYYYY(dateCreated),
+    );
+
+    const jiraDayPoint = 16;
+    let totalPoint = 0;
+
+    if (jiraOnTime) {
+      if (displayCreated)
+        totalPoint +=
+          jiraDayPoint /
+          formatDuration(mainJiraIssue.value?.fields?.timeestimate || 0);
+    } else {
+      totalPoint += Math.floor(
+        8 / formatDuration(mainJiraIssue.value?.fields?.timeestimate || 0),
+      );
+    }
+
+    if (totalPoint > 2) {
+      totalPoint = 2;
+    }
+
+    return totalPoint;
+  }
+  return null;
+});
+
+function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
+
+const getDateFromSummary = (summary: string) => {
+  const regex = /\d{2}[A-Z]{3}\d{4}/i;
+  const match = summary.match(regex);
+  return match ? match[0] : null;
+};
 
 // Gunakan 'watch' untuk memicu fetch subtask setelah fetch utama selesai
 watch(
@@ -113,24 +176,24 @@ const countSubtasks = computed(
   () => mainJiraIssue.value?.fields?.subtasks.length || 0,
 );
 
-function formatDuration(seconds: number | null): string {
+function formatDuration(seconds: number | null): number {
   if (seconds == null || seconds === 0) {
-    return "0h";
+    return 0;
   }
 
   // Menangani durasi lebih dari 24 jam dengan benar
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
 
-  let result = "";
+  let result = 0;
   if (hours > 0) {
-    result += `${hours}H `;
+    result += hours;
   }
   if (minutes > 0) {
-    result += `${minutes}m`;
+    result += minutes;
   }
 
-  return result.trim() || "0h";
+  return result;
 }
 
 // --- Helper function for status badges ---
@@ -203,7 +266,7 @@ onUnmounted(() => {
     <div
       class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
     >
-      <h3 class="fw-semibold mb-0">Jira Issue Details: {{ jiraKey }}</h3>
+      <h3 class="mb-0">{{ jiraKey }} | {{ displaySummary }}</h3>
     </div>
 
     <div class="card-body">
@@ -275,7 +338,7 @@ onUnmounted(() => {
                 v-if="displayTimeEstimate && !allTimeEstimate"
                 class="fw-bold mb-0"
               >
-                {{ formatDuration(displayTimeEstimate) }}
+                {{ formatDuration(displayTimeEstimate) }}H
               </p>
 
               <p v-else-if="loadingSubtasks" class="fw-bold mb-0 text-muted">
@@ -284,9 +347,24 @@ onUnmounted(() => {
               </p>
 
               <p v-else class="fw-bold mb-0">
-                {{ formatDuration(allTimeEstimate) }} | Subtasks Total :
+                {{ formatDuration(allTimeEstimate) }}H | Subtasks Total :
                 {{ allTotalSubtaskDetail }}
               </p>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-4" v-if="displayPointrate">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Jira Pointrate:</p>
+              <span>{{ displayPointrate }}</span>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4" v-if="displayDateTask">
+            <div class="detail-item p-3 border rounded bg-light">
+              <p class="mb-1 text-muted">Jira Pointrate:</p>
+              <span>{{
+                new Date(parseDDMONYYYY(displayDateTask)).toLocaleString()
+              }}</span>
             </div>
           </div>
         </div>
@@ -350,8 +428,7 @@ onUnmounted(() => {
   background-color: #f0f4f7; /* Lighter background for description */
   padding: 1.25rem;
   border-radius: 0.5rem;
-  font-family:
-    "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
+  font-family: "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
   word-break: break-word;
   line-height: 1.6;
   color: #343a40;

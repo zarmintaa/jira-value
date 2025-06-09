@@ -17,7 +17,7 @@ type MonthAbbreviation =
  * @param dateString String tanggal yang akan di-parsing.
  * @returns Objek Date yang valid, atau Invalid Date jika format salah.
  */
-function parseDDMONYYYY(dateString: string): Date {
+export function parseDDMONYYYY(dateString: string): Date {
   // Pengecekan awal untuk panjang string
   if (dateString.length !== 9) {
     return new Date(NaN); // Mengembalikan Invalid Date
