@@ -4,6 +4,7 @@ import type { Ref, UnwrapRef } from "vue";
 import { ref } from "vue";
 import type { JiraUser } from "~/types/jira";
 import TableView from "~/components/table/TableView.vue";
+import { formatReadableDate } from "~/utils/day";
 
 const data: Ref<UnwrapRef<JiraUser>[]> = ref(dummyJiraUser);
 const loading = ref(false);
@@ -18,7 +19,7 @@ const allJira = computed(() => {
     status: issue.fields.status.name,
     email: issue.fields.assignee?.emailAddress,
     description: issue.fields.description,
-    created: issue.fields.created,
+    created: formatReadableDate(issue.fields.created, false),
   }));
   console.log("allJira data:", mappedData); // Tambahkan ini
   return mappedData;

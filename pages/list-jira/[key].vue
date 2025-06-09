@@ -4,6 +4,8 @@ import type { JiraIssue, JiraSubtask } from "~/types/jira";
 import { useSafeFetch } from "~/composable/useSafeFetch";
 import { parseDDMONYYYY } from "~/utils/dateStringConverter";
 import { isSameDay } from "date-fns";
+import { formatReadableDate } from "~/utils/day";
+import dayjs from "dayjs";
 
 const route = useRoute();
 const jiraKey = route.params.key as string;
@@ -87,46 +89,69 @@ const displayTimeEstimate = computed(
   () => mainJiraIssue.value?.fields?.timeestimate || null,
 );
 
-const displayDateTask = computed(() =>
-  getDateFromSummary(displaySummary.value),
+const displayDateTask = computed(
+  () => mainJiraIssue.value?.fields?.customfield_10679 || null,
 );
 
 const displayPointRate = computed(() => {
-  if (subtaskDetails.value.length !== 0) {
+  // 1. Kondisi awal tetap sama: jika ada detail subtask, jangan hitung.
+  if (subtaskDetails.value && subtaskDetails.value.length > 0) {
     return null;
   }
 
-  const dateSummary = getDateFromSummary(
-    mainJiraIssue.value?.fields?.summary || "",
-  );
-  const dateCreated = mainJiraIssue.value?.fields?.created;
+  // 2. Ambil data tanggal mentah (string ISO) langsung dari state
+  const customDateString = mainJiraIssue.value?.fields?.customfield_10679;
+  const dateCreatedString = mainJiraIssue.value?.fields?.created;
 
-  console.log({ dateSummary, dateCreated });
+  // 3. Lakukan validasi: pastikan kedua tanggal ada
+  if (!customDateString || !dateCreatedString) {
+    return null;
+  }
 
-  if (dateSummary && dateCreated) {
-    const jiraOnTime = isSameDay(parseDDMONYYYY(dateSummary), dateCreated);
+  // 4. Buat objek dayjs dan bandingkan. Ini bagian intinya.
+  const customDate = dayjs(customDateString);
+  const creationDate = dayjs(dateCreatedString);
 
-    const jiraDayPoint = 16;
-    let totalPoint = 0;
+  // Cek apakah tanggalnya valid sebelum membandingkan
+  if (!customDate.isValid() || !creationDate.isValid()) {
+    return null;
+  }
 
-    if (jiraOnTime) {
-      if (displayCreated)
-        totalPoint +=
-          jiraDayPoint /
-          formatDuration(mainJiraIssue.value?.fields?.timeestimate || 0);
+  // Bandingkan apakah keduanya berada di HARI yang sama (mengabaikan jam dan menit)
+  const jiraOnTime = customDate
+    .startOf("day")
+    .isSame(creationDate.startOf("day"));
+
+  // 5. Lakukan kalkulasi poin (logika ini sebagian besar sama seperti sebelumnya)
+  const jiraDayPoint = 16;
+  let totalPoint = 0;
+
+  // Ambil nilai timeestimate mentah dalam detik
+  const timeEstimateInSeconds = mainJiraIssue.value?.fields?.timeestimate || 0;
+
+  if (jiraOnTime) {
+    // Gunakan nilai detik mentah untuk kalkulasi
+    if (timeEstimateInSeconds > 0) {
+      // Ubah detik ke jam untuk pembagian (1 jam = 3600 detik)
+      const timeEstimateInHours = timeEstimateInSeconds / 3600;
+      totalPoint += jiraDayPoint / timeEstimateInHours;
     } else {
-      totalPoint += 1;
-    }
-
-    if (totalPoint > 2) {
+      // Jika tidak ada estimasi, beri poin maksimal
       totalPoint = 2;
     }
-
-    return totalPoint;
+  } else {
+    // Jika tidak tepat waktu, poinnya 1
+    totalPoint = 1;
   }
-  return null;
-});
 
+  // Batasi total poin maksimal 2
+  if (totalPoint > 2) {
+    totalPoint = 2;
+  }
+
+  // Bulatkan hasil untuk menghindari angka desimal yang panjang
+  return Math.round(totalPoint * 100) / 100;
+});
 const getDateFromSummary = (summary: string) => {
   const regex = /\d{2}[A-Z]{3}\d{4}/i;
   const match = summary.match(regex);
@@ -311,9 +336,7 @@ onUnmounted(() => {
               <p class="mb-1 text-muted">Created:</p>
               <p class="fw-bold mb-0">
                 {{
-                  displayCreated
-                    ? new Date(displayCreated).toLocaleString()
-                    : "N/A"
+                  displayCreated ? formatReadableDate(displayCreated) : "N/A"
                 }}
               </p>
             </div>
@@ -351,7 +374,7 @@ onUnmounted(() => {
             <div class="detail-item p-3 border rounded bg-light">
               <p class="mb-1 text-muted">Sub Task Date:</p>
               <span>{{
-                new Date(parseDDMONYYYY(displayDateTask)).toLocaleString()
+                formatReadableDate(displayDateTask, { withTime: false })
               }}</span>
             </div>
           </div>
@@ -416,7 +439,8 @@ onUnmounted(() => {
   background-color: #f0f4f7; /* Lighter background for description */
   padding: 1.25rem;
   border-radius: 0.5rem;
-  font-family: "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
+  font-family:
+    "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
   word-break: break-word;
   line-height: 1.6;
   color: #343a40;
