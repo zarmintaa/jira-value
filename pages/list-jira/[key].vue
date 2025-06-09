@@ -3,6 +3,7 @@ import { useRoute } from "vue-router";
 import type { JiraIssue, JiraSubtask } from "~/types/jira";
 import { useSafeFetch } from "~/composable/useSafeFetch";
 import { parseDDMONYYYY } from "~/utils/dateStringConverter";
+import { isSameDay } from "date-fns";
 
 const route = useRoute();
 const jiraKey = route.params.key as string;
@@ -90,7 +91,7 @@ const displayDateTask = computed(() =>
   getDateFromSummary(displaySummary.value),
 );
 
-const displayPointrate = computed(() => {
+const displayPointRate = computed(() => {
   if (subtaskDetails.value.length !== 0) {
     return null;
   }
@@ -103,10 +104,7 @@ const displayPointrate = computed(() => {
   console.log({ dateSummary, dateCreated });
 
   if (dateSummary && dateCreated) {
-    const jiraOnTime = isSameDay(
-      parseDDMONYYYY(dateSummary),
-      parseDDMONYYYY(dateCreated),
-    );
+    const jiraOnTime = isSameDay(parseDDMONYYYY(dateSummary), dateCreated);
 
     const jiraDayPoint = 16;
     let totalPoint = 0;
@@ -117,9 +115,7 @@ const displayPointrate = computed(() => {
           jiraDayPoint /
           formatDuration(mainJiraIssue.value?.fields?.timeestimate || 0);
     } else {
-      totalPoint += Math.floor(
-        8 / formatDuration(mainJiraIssue.value?.fields?.timeestimate || 0),
-      );
+      totalPoint += 1;
     }
 
     if (totalPoint > 2) {
@@ -130,14 +126,6 @@ const displayPointrate = computed(() => {
   }
   return null;
 });
-
-function isSameDay(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-}
 
 const getDateFromSummary = (summary: string) => {
   const regex = /\d{2}[A-Z]{3}\d{4}/i;
@@ -353,15 +341,15 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="col-md-6 col-lg-4" v-if="displayPointrate">
+          <div class="col-md-6 col-lg-4" v-if="displayPointRate">
             <div class="detail-item p-3 border rounded bg-light">
-              <p class="mb-1 text-muted">Jira Pointrate:</p>
-              <span>{{ displayPointrate }}</span>
+              <p class="mb-1 text-muted">Jira Point Rate:</p>
+              <span>{{ displayPointRate }}</span>
             </div>
           </div>
           <div class="col-md-6 col-lg-4" v-if="displayDateTask">
             <div class="detail-item p-3 border rounded bg-light">
-              <p class="mb-1 text-muted">Jira Pointrate:</p>
+              <p class="mb-1 text-muted">Sub Task Date:</p>
               <span>{{
                 new Date(parseDDMONYYYY(displayDateTask)).toLocaleString()
               }}</span>
