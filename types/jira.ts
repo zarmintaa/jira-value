@@ -18,6 +18,7 @@ export interface JiraIssue {
       name: string;
     };
     timeestimate: number;
+    customfield_10679?: string;
   };
 }
 

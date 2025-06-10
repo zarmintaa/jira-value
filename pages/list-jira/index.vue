@@ -4,6 +4,7 @@ import type { Ref, UnwrapRef } from "vue";
 import { ref } from "vue";
 import type { JiraUser } from "~/types/jira";
 import TableView from "~/components/table/TableView.vue";
+import { formatReadableDate } from "~/utils/day";
 
 const data: Ref<UnwrapRef<JiraUser>[]> = ref(dummyJiraUser);
 const loading = ref(false);
@@ -12,13 +13,13 @@ const router = useNuxtApp().$router;
 
 const allJira = computed(() => {
   const mappedData = data.value.map((issue) => ({
-    assignee: issue.displayName,
+    assignee: issue.fields.assignee?.displayName,
     key: issue.key,
-    summary: issue.summary,
-    status: issue.status,
-    email: issue.emailAddress,
-    description: issue.description,
-    created: issue.created,
+    summary: issue.fields.summary,
+    status: issue.fields.status.name,
+    email: issue.fields.assignee?.emailAddress,
+    description: issue.fields.description,
+    created: formatReadableDate(issue.fields.created, false),
   }));
   console.log("allJira data:", mappedData); // Tambahkan ini
   return mappedData;
