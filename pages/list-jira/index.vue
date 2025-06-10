@@ -12,13 +12,13 @@ const router = useNuxtApp().$router;
 
 const allJira = computed(() => {
   const mappedData = data.value.map((issue) => ({
-    assignee: issue.fields.assignee?.displayName,
+    assignee: issue.displayName,
     key: issue.key,
-    summary: issue.fields.summary,
-    status: issue.fields.status.name,
-    email: issue.fields.assignee?.emailAddress,
-    description: issue.fields.description,
-    created: issue.fields.created,
+    summary: issue.summary,
+    status: issue.status,
+    email: issue.emailAddress,
+    description: issue.description,
+    created: issue.created,
   }));
   console.log("allJira data:", mappedData); // Tambahkan ini
   return mappedData;

@@ -23,21 +23,12 @@ export interface JiraIssue {
 
 export interface JiraUser {
   key: string;
-  fields: {
-    summary: string;
-    status: {
-      name: string;
-    };
-    assignee: {
-      displayName: string;
-      emailAddress: string;
-      avatarUrls?: {
-        "48x48": string | null;
-      };
-    } | null; // assignee bisa jadi null
-    description: any; // Deskripsi Jira bisa sangat kompleks, `any` adalah jalan pintas yang aman
-    created: string;
-  };
+  summary: string;
+  status: string;
+  displayName: string;
+  emailAddress: string;
+  description: any;
+  created: string;
 }
 
 export interface JiraSubtask {
