@@ -1,6 +1,11 @@
+import type { RankedUser } from "~/types/rank-user";
+
 export interface JiraIssue {
   key: string;
   fields: {
+    parent?: {
+      key: string;
+    };
     summary: string;
     status: {
       name: string;
@@ -30,6 +35,7 @@ export interface JiraUser {
   emailAddress: string;
   description: any;
   created: string;
+  rankedUser?: RankedUser;
 }
 
 export interface JiraSubtask {
@@ -43,5 +49,6 @@ export interface JiraSubtask {
       name: string;
     };
     created: string;
+    timeestimate?: number;
   };
 }

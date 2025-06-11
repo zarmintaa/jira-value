@@ -9,6 +9,7 @@ export const dummyJiraUser: JiraUser[] = [
     emailAddress: "v.ammar.burhanudin@adira.co.id",
     description: "Jira IT BOA",
     created: "2025-01-01",
+    rankedUser: [],
   },
   {
     key: "ITBOA-8884",
@@ -18,8 +19,9 @@ export const dummyJiraUser: JiraUser[] = [
     emailAddress: "v.cut.melati@adira.co.id",
     description: "Jira IT BOA",
     created: "2025-01-01",
+    rankedUser: [],
   },
-  {
+  /* {
     key: "ITBOA-3457",
     summary: "Syafira Indah Nurkafianti - 51205997",
     status: "To-Do",
@@ -27,6 +29,7 @@ export const dummyJiraUser: JiraUser[] = [
     emailAddress: "v.syafira.indah@adira.co.id",
     description: "Jira IT BOA",
     created: "2025-01-01",
+    rankedUser: [],
   },
   {
     key: "ITBOA-13591",
@@ -36,6 +39,7 @@ export const dummyJiraUser: JiraUser[] = [
     emailAddress: "v.abdurokhman@adira.co.id",
     description: "Jira IT BOA",
     created: "2025-01-01",
+    rankedUser: [],
   },
   {
     key: "ITBOA-13693",
@@ -45,6 +49,7 @@ export const dummyJiraUser: JiraUser[] = [
     emailAddress: "v.zarkasih.akhmad@adira.co.id",
     description: "Jira IT BOA",
     created: "2025-01-01",
+    rankedUser: [],
   },
   {
     key: "ITBOA-15618",
@@ -54,5 +59,6 @@ export const dummyJiraUser: JiraUser[] = [
     emailAddress: "v.iqbal.firdaus@adira.co.id",
     description: "Jira IT BOA",
     created: "2025-01-01",
-  },
+    rankedUser: [],
+  },*/
 ];

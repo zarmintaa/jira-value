@@ -1,267 +1,229 @@
-<script setup>
+<script lang="ts" setup>
 import CardRank from "~/components/rank/CardRank.vue";
+import type { Ref } from "vue";
+import type { JiraIssue, JiraUser } from "~/types/jira.js";
+import { ref, onUnmounted } from "vue";
+import { dummyJiraUser } from "~/data/dummy-jira.js";
 
-// Path Data SVG untuk ikon
-// Anda bisa mendapatkan ini dari situs seperti Heroicons, Feather Icons, dll.
+// Definisikan konstanta ikon untuk kebersihan kode
 const ICON_CLOCK = "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z";
 const ICON_STAR =
-  "M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z";
+  "M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.sem563 0 00.475-.345L11.48 3.5z";
+const ICON_SUBTASK =
+  "M3 13h2V3H3v10zm4 0h2V6H7v7zm4 0h2V8h-2v5zm4 0h2V1h-2v12z";
 
-const rankedUsers = [
-  {
-    rank: 1,
-    user: {
-      name: "Lord Haikal",
-      email: "haikal@adira.co.id",
-      avatar: "https://i.pravatar.cc/150?u=haikal",
+// --- STATE MANAGEMENT ---
+const sourceUsers: Ref<JiraUser[]> = ref(dummyJiraUser || []);
+let controller: AbortController | null = null;
+
+// --- LOGIC ---
+// Fungsi ini sekarang tidak mengubah state apa pun, ia hanya fokus mengambil dan memproses data, lalu mengembalikannya.
+const getRank = async () => {
+  controller = new AbortController();
+  const signal = controller.signal;
+
+  if (sourceUsers.value.length === 0) return [];
+
+  // 1. Fetch parents
+  const parentFetchPromises = sourceUsers.value.map((user) =>
+    $fetch<JiraIssue>(`/api/jira/${user.key}`, { signal }),
+  );
+  const jiraIssues = await Promise.all(parentFetchPromises);
+
+  // 2. Fetch subtasks
+  const subtaskFetchPromises = jiraIssues.flatMap((issue) =>
+    (issue.fields.subtasks || []).map((subtask) =>
+      $fetch<JiraIssue>(`/api/jira/${subtask.key}`, { signal }),
+    ),
+  );
+  const allFetchedSubtasks: JiraIssue[] =
+    subtaskFetchPromises.length > 0
+      ? await Promise.all(subtaskFetchPromises)
+      : [];
+
+  // 3. Group subtasks
+  const subtasksByParentKey = new Map<string, JiraIssue[]>();
+  for (const subtask of allFetchedSubtasks) {
+    const parentKey = subtask.fields.parent?.key;
+    if (parentKey) {
+      if (!subtasksByParentKey.has(parentKey))
+        subtasksByParentKey.set(parentKey, []);
+      subtasksByParentKey.get(parentKey)!.push(subtask);
+    }
+  }
+
+  // 4. Enrich parents with full subtask data
+  const enrichedJiraIssues: JiraIssue[] = jiraIssues.map((parentIssue) => ({
+    ...parentIssue,
+    fields: {
+      ...parentIssue.fields,
+      subtasks: subtasksByParentKey.get(parentIssue.key) || [],
     },
-    stats: [
-      { label: "Finished Task", value: "8h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 120, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 2,
-    user: {
-      name: "Budi Doremi",
-      email: "budi.doremi@example.com",
-      avatar: "https://i.pravatar.cc/150?u=budi",
-    },
-    stats: [
-      { label: "Finished Task", value: "7h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 110, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 3,
-    user: {
-      name: "Cinta Laura",
-      email: "cinta.laura@example.com",
-      avatar: "https://i.pravatar.cc/150?u=cinta",
-    },
-    stats: [
-      { label: "Finished Task", value: "6h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 95, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 4,
-    user: {
-      name: "Jamal",
-      email: "jamal@example.com",
-      avatar: "https://i.pravatar.cc/150?u=jamal",
-    },
-    stats: [
-      { label: "Finished Task", value: "6h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 95, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 5,
-    user: {
-      name: "Dewi Safitri",
-      email: "dewi.s@example.com",
-      avatar: "https://i.pravatar.cc/150?u=dewi",
-    },
-    stats: [
-      { label: "Finished Task", value: "5h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 90, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 6,
-    user: {
-      name: "Eko Prasetyo",
-      email: "eko.p@example.com",
-      avatar: "https://i.pravatar.cc/150?u=eko",
-    },
-    stats: [
-      { label: "Finished Task", value: "5h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 88, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 7,
-    user: {
-      name: "Fitriani",
-      email: "fitriani@example.com",
-      avatar: "https://i.pravatar.cc/150?u=fitriani",
-    },
-    stats: [
-      { label: "Finished Task", value: "4h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 85, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 8,
-    user: {
-      name: "Gilang Ramadhan",
-      email: "gilang.r@example.com",
-      avatar: "https://i.pravatar.cc/150?u=gilang",
-    },
-    stats: [
-      { label: "Finished Task", value: "4h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 82, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 9,
-    user: {
-      name: "Herawati",
-      email: "herawati@example.com",
-      avatar: "https://i.pravatar.cc/150?u=herawati",
-    },
-    stats: [
-      { label: "Finished Task", value: "4h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 79, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 10,
-    user: {
-      name: "Indra Kusuma",
-      email: "indra.k@example.com",
-      avatar: "https://i.pravatar.cc/150?u=indra",
-    },
-    stats: [
-      { label: "Finished Task", value: "3h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 75, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 11,
-    user: {
-      name: "Joko Susilo",
-      email: "joko.s@example.com",
-      avatar: "https://i.pravatar.cc/150?u=joko",
-    },
-    stats: [
-      { label: "Finished Task", value: "3h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 71, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 12,
-    user: {
-      name: "Kartika Sari",
-      email: "kartika.s@example.com",
-      avatar: "https://i.pravatar.cc/150?u=kartika",
-    },
-    stats: [
-      { label: "Finished Task", value: "3h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 68, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 13,
-    user: {
-      name: "Lia Amelia",
-      email: "lia.a@example.com",
-      avatar: "https://i.pravatar.cc/150?u=lia",
-    },
-    stats: [
-      { label: "Finished Task", value: "2h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 65, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 14,
-    user: {
-      name: "Muhammad Fajar",
-      email: "m.fajar@example.com",
-      avatar: "https://i.pravatar.cc/150?u=fajar",
-    },
-    stats: [
-      { label: "Finished Task", value: "2h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 60, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 15,
-    user: {
-      name: "Nadia Putri",
-      email: "nadia.p@example.com",
-      avatar: "https://i.pravatar.cc/150?u=nadia",
-    },
-    stats: [
-      { label: "Finished Task", value: "2h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 57, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 16,
-    user: {
-      name: "Oscar Maulana",
-      email: "oscar.m@example.com",
-      avatar: "https://i.pravatar.cc/150?u=oscar",
-    },
-    stats: [
-      { label: "Finished Task", value: "2h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 55, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 17,
-    user: {
-      name: "Putri Wulandari",
-      email: "putri.w@example.com",
-      avatar: "https://i.pravatar.cc/150?u=putriw",
-    },
-    stats: [
-      { label: "Finished Task", value: "1h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 50, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 18,
-    user: {
-      name: "Rizky Akbar",
-      email: "rizky.a@example.com",
-      avatar: "https://i.pravatar.cc/150?u=rizky",
-    },
-    stats: [
-      { label: "Finished Task", value: "1h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 48, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 19,
-    user: {
-      name: "Siti Nurhaliza",
-      email: "siti.n@example.com",
-      avatar: "https://i.pravatar.cc/150?u=siti",
-    },
-    stats: [
-      { label: "Finished Task", value: "1h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 45, icon: ICON_STAR },
-    ],
-  },
-  {
-    rank: 20,
-    user: {
-      name: "Taufik Hidayat",
-      email: "taufik.h@example.com",
-      avatar: "https://i.pravatar.cc/150?u=taufik",
-    },
-    stats: [
-      { label: "Finished Task", value: "1h", icon: ICON_CLOCK },
-      { label: "Total Point", value: 42, icon: ICON_STAR },
-    ],
-  },
-];
+  }));
+
+  // 5. Proses data final
+  const finalData = enrichedJiraIssues.map((enrichedIssue, index) => {
+    const originalUser = sourceUsers.value.find(
+      (u) => u.key === enrichedIssue.key,
+    );
+
+    const allCreationTimestamps = [
+      enrichedIssue.fields.created,
+      ...enrichedIssue.fields.subtasks.map((st) => st.fields.created),
+    ];
+    const allDateStrings = allCreationTimestamps
+      .filter((ts) => ts)
+      .map((ts) => ts.slice(0, 10));
+    const uniqueDayCount = new Set(allDateStrings).size;
+
+    const totalTimeInSeconds = enrichedIssue.fields.subtasks.reduce(
+      (total, subtask) => total + (subtask.fields.timeestimate || 0),
+      0,
+    );
+    const totalHoursFormatted = `${(totalTimeInSeconds / 3600).toFixed(1)}h`;
+
+    const subtasksDone = enrichedIssue.fields.subtasks.filter(
+      (st) => st.fields.status.name === "Done",
+    ).length;
+
+    return {
+      rank: index + 1,
+      user: {
+        name: originalUser?.name || "Unknown User",
+        email: originalUser?.emailAddresses[0] || "",
+        avatar: originalUser?.avatarUrls["48x48"] || "",
+      },
+      stats: [
+        { label: "Total Point", value: uniqueDayCount, icon: ICON_STAR },
+        {
+          label: "Subtask Est. Time",
+          value: totalHoursFormatted,
+          icon: ICON_CLOCK,
+        },
+        {
+          label: "Subtasks Done",
+          value: `${subtasksDone} / ${enrichedIssue.fields.subtasks.length}`,
+          icon: ICON_SUBTASK,
+        },
+      ],
+    };
+  });
+
+  // PENTING: Kembalikan data yang sudah diproses
+  return finalData;
+};
+
+// --- LIFECYCLE & EXECUTION ---
+// Panggil `getRank` di dalam `useAsyncData` dengan opsi `lazy: true`
+// Nuxt akan secara otomatis mengelola state `pending`, `error`, dan `data`
+const {
+  data: rankedUsersData,
+  pending,
+  error,
+} = await useAsyncData(
+  "get-user-ranks", // Kunci unik untuk data ini
+  () => getRank(), // Fungsi yang akan dijalankan
+  { lazy: true }, // <-- Tidak memblokir render di server
+);
+
+onUnmounted(() => {
+  // Batalkan fetch jika user meninggalkan halaman sebelum selesai
+  if (controller) {
+    controller.abort();
+  }
+});
 </script>
 
 <template>
   <div class="mt-3">
-    <div class="row g-4">
+    <div v-if="pending" class="row g-4">
+      <div v-for="n in 4" :key="`skel-${n}`" class="col-lg-6 col-sm-12">
+        <div class="card shadow-sm">
+          <div class="card-body d-flex align-items-center p-3">
+            <div class="skeleton-avatar me-3"></div>
+            <div class="flex-grow-1">
+              <div class="skeleton-text w-75 mb-2"></div>
+              <div class="skeleton-text w-50"></div>
+            </div>
+            <div class="skeleton-rank"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="error" class="alert alert-danger">
+      Gagal memuat data peringkat. Silakan coba lagi nanti.
+      <pre class="mt-2">{{ error.message }}</pre>
+    </div>
+
+    <div v-else class="row g-4">
       <div
-        v-for="(item, index) in rankedUsers"
+        v-for="(item, index) in rankedUsersData"
         :key="item.rank"
-        :style="{ 'animation-delay': `${index * 10 * 100}ms` }"
-        class="col-lg-6 col-sm-12"
+        :style="{ 'animation-delay': `${index * 100}ms` }"
+        class="col-lg-6 col-sm-12 fade-in"
       >
         <CardRank :rank="item.rank" :stats="item.stats" :user="item.user" />
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* CSS untuk Skeleton Loader */
+.skeleton-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #eef0f2;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-text {
+  height: 1rem;
+  background-color: #eef0f2;
+  border-radius: 4px;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-rank {
+  width: 30px;
+  height: 30px;
+  background-color: #eef0f2;
+  border-radius: 4px;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.w-75 {
+  width: 75%;
+}
+.w-50 {
+  width: 50%;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* CSS untuk animasi fade-in setelah data dimuat */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

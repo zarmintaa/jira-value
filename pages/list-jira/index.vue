@@ -21,7 +21,6 @@ const allJira = computed(() => {
     description: issue.description,
     created: formatReadableDate(issue.created),
   }));
-  console.log("allJira data:", mappedData); // Tambahkan ini
   return mappedData;
 });
 
