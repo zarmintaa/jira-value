@@ -26,7 +26,7 @@ const {
 
 // Fungsi untuk fetch semua subtask secara SERIAL (satu per satu)
 const fetchAllSubtaskDetails = async () => {
-  const allSubtasksStubs: JiraSubtask[] =
+  const allSubtasksStubs: JiraIssue[] =
     mainJiraIssue.value?.fields.subtasks || [];
   if (allSubtasksStubs.length === 0) {
     console.log("Tidak ada subtask untuk di-fetch.");
@@ -257,11 +257,11 @@ const subtasksForTable = computed(() => {
   if (!mainJiraIssue.value || !mainJiraIssue.value.fields.subtasks) {
     return []; // Jika belum ada data atau subtasks tidak ada, kembalikan array kosong
   }
-  return mainJiraIssue.value.fields.subtasks.map((subtask: JiraSubtask) => ({
+  return mainJiraIssue.value.fields.subtasks.map((subtask: JiraIssue) => ({
     key: subtask.key,
     summary: subtask.fields.summary,
     status: subtask.fields.status.name,
-    priority: subtask.fields.priority.name,
+    // priority: subtask.fields.priority.name,
   }));
 });
 
@@ -376,8 +376,7 @@ onUnmounted(() => {
               </p>
 
               <p v-else-if="loadingSubtasks" class="fw-bold mb-0 text-muted">
-                Calculating {{ allTotalSubtaskDetail }} from
-                {{ countSubtasks }} subtasks...
+                Calculating...
               </p>
 
               <p v-else class="fw-bold mb-0">
