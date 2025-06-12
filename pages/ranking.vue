@@ -2,8 +2,8 @@
 import CardRank from "~/components/rank/CardRank.vue";
 import RankCardSkeleton from "~/components/rank/RankCardSkeleton.vue";
 import type { Ref } from "vue";
+import { onUnmounted, ref } from "vue";
 import type { JiraIssue, JiraUser } from "~/types/jira.js";
-import { ref, onUnmounted } from "vue";
 import { dummyJiraUser } from "~/data/dummy-jira.js";
 
 // --- STATE MANAGEMENT ---
@@ -191,36 +191,36 @@ onUnmounted(() => {
         <form @submit.prevent="handleFilter">
           <div class="row g-3 align-items-end">
             <div class="col-md">
-              <label for="startDate" class="form-label">Tanggal Mulai</label>
+              <label class="form-label" for="startDate">Tanggal Mulai</label>
               <input
                 id="startDate"
                 v-model="startDate"
-                type="date"
                 class="form-control"
                 required
+                type="date"
               />
             </div>
             <div class="col-md">
-              <label for="endDate" class="form-label">Tanggal Selesai</label>
+              <label class="form-label" for="endDate">Tanggal Selesai</label>
               <input
                 id="endDate"
                 v-model="endDate"
-                type="date"
                 class="form-control"
                 required
+                type="date"
               />
             </div>
             <div class="col-md-auto">
               <button
-                type="submit"
-                class="btn btn-primary w-100"
                 :disabled="pending"
+                class="btn btn-primary w-100"
+                type="submit"
               >
                 <span
                   v-if="pending"
+                  aria-hidden="true"
                   class="spinner-border spinner-border-sm"
                   role="status"
-                  aria-hidden="true"
                 ></span>
                 <span v-else>Generate Rank</span>
               </button>
@@ -248,10 +248,10 @@ onUnmounted(() => {
           class="col-lg-6 col-sm-12 fade-in"
         >
           <CardRank
+            :class="`is-rank-${item.rank}`"
             :rank="item.rank"
             :stats="item.stats"
             :user="item.user"
-            :class="`is-rank-${item.rank}`"
           />
         </div>
       </div>
@@ -279,6 +279,7 @@ onUnmounted(() => {
   animation: fadeIn 0.5s ease-in-out forwards;
   opacity: 0;
 }
+
 @keyframes fadeIn {
   from {
     opacity: 0;

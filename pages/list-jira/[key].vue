@@ -362,13 +362,13 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="col-md-6 col-lg-4" v-if="displayPointRate">
+          <div v-if="displayPointRate" class="col-md-6 col-lg-4">
             <div class="detail-item p-3 border rounded bg-light">
               <p class="mb-1 text-muted">Jira Point Rate:</p>
               <span>{{ displayPointRate }}</span>
             </div>
           </div>
-          <div class="col-md-6 col-lg-4" v-if="displayDateTask">
+          <div v-if="displayDateTask" class="col-md-6 col-lg-4">
             <div class="detail-item p-3 border rounded bg-light">
               <p class="mb-1 text-muted">Sub Task Date:</p>
               <span>{{
@@ -437,8 +437,7 @@ onUnmounted(() => {
   background-color: #f0f4f7; /* Lighter background for description */
   padding: 1.25rem;
   border-radius: 0.5rem;
-  font-family:
-    "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
+  font-family: "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
   word-break: break-word;
   line-height: 1.6;
   color: #343a40;

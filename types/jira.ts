@@ -25,18 +25,10 @@ export interface JiraIssue {
     };
     timeestimate: number; // Mungkin lebih aman: number | null
     customfield_10679?: string;
-
-    // --- PERBAIKAN KUNCI ADA DI SINI ---
-    // Sekarang kita menyatakan bahwa 'subtasks' akan berisi array dari
-    // objek 'JiraIssue' lain yang lengkap. Ini sesuai dengan data
-    // yang Anda miliki setelah proses fetch.
-    subtasks: JiraSubtask[];
+    subtasks: JiraIssue[];
   };
 }
 
-// Interface JiraSubtask ini tidak perlu diubah.
-// Interface ini mungkin berguna jika Anda berinteraksi dengan
-// bagian lain dari API Jira yang mengembalikan struktur ini.
 export interface JiraSubtask {
   key: string;
   fields: {
@@ -51,6 +43,7 @@ export interface JiraSubtask {
     timeestimate?: number;
   };
 }
+
 export interface JiraUser {
   key: string;
   summary: string;
