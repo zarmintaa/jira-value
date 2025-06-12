@@ -84,7 +84,7 @@ export const dummyJiraUser: JiraUser[] = [
   },
   {
     key: "ITBOA-13613",
-    summary: "Addyari Amirul Fajar - 51206929",
+    summary: "Addyani Amirul Fajar - 51206929",
     status: "To-Do",
     displayName: "BOA - Addyari Amirul Fajar",
     emailAddress: "v.addyari.amirul@adira.co.id",
@@ -101,7 +101,7 @@ export const dummyJiraUser: JiraUser[] = [
     created: "2025-01-01",
   },
   {
-    key: "ITBOA-15646",
+    key: "ITBOA-13646",
     summary: "Muhammad Firmansyah - 51211302",
     status: "To-Do",
     displayName: "BOA - Muhammad Firmansyah",
@@ -155,7 +155,7 @@ export const dummyJiraUser: JiraUser[] = [
     created: "2025-01-01",
   },
   {
-    key: "ITBOA-15818",
+    key: "ITBOA-15618",
     summary: "Muhammad Iqbal Firdaus Mahendra - 51222408",
     status: "To-Do",
     displayName: "BOA - Muhammad Iqbal Firdaus Mahendra",
