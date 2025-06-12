@@ -30,8 +30,8 @@ const getRank = async (filterStartDate: string, filterEndDate: string) => {
   const signal = controller.signal;
   if (sourceUsers.value.length === 0) return [];
 
-  // --- BAGIAN PERSIAPAN DATA (TIDAK BERUBAH) ---
   const userMap = new Map(sourceUsers.value.map((user) => [user.key, user]));
+
   const parentFetchPromises = sourceUsers.value.map((user) =>
     $fetch<JiraIssue>(`/api/jira/${user.key}`, { signal }),
   );
@@ -81,74 +81,69 @@ const getRank = async (filterStartDate: string, filterEndDate: string) => {
     },
   }));
 
-  // =========================================================================
-  // PERBAIKAN LOGIKA FILTER TANGGAL DI SINI
-  // =========================================================================
-
-  // Konversi tanggal filter menjadi objek Date.
-  // Ini akan diinterpretasikan sebagai awal hari (00:00) di zona waktu lokal.
   const filterStart = new Date(filterStartDate);
-
-  // Untuk tanggal akhir, kita ambil tanggal berikutnya dan set jam ke 00:00.
-  // Ini memastikan semua aktivitas di `filterEndDate` (hingga jam 23:59) akan terhitung.
   const filterEnd = new Date(filterEndDate);
   filterEnd.setDate(filterEnd.getDate() + 1);
 
-  const processedData = enrichedJiraIssues
-    .map((enrichedIssue) => {
-      // Gunakan perbandingan objek Date, bukan string
-      const filteredSubtasks = enrichedIssue.fields.subtasks.filter((st) => {
-        const createdDate = new Date(st.fields.created); // Parse string ISO lengkap dari Jira
-        return createdDate >= filterStart && createdDate < filterEnd;
-      });
+  // =========================================================================
+  // PERUBAHAN DI SINI
+  // =========================================================================
+  const processedData = enrichedJiraIssues.map((enrichedIssue) => {
+    const filteredSubtasks = enrichedIssue.fields.subtasks.filter((st) => {
+      const createdDate = new Date(st.fields.created);
+      return createdDate >= filterStart && createdDate < filterEnd;
+    });
 
-      if (filteredSubtasks.length === 0) return null;
+    // ---- KODE `if` DAN `.filter(item => item !== null)` DIHAPUS ----
+    // if (filteredSubtasks.length === 0) return null; // <-- BARIS INI DIHAPUS
 
-      // Sisa kalkulasi di bawah ini sekarang menggunakan data yang sudah difilter dengan benar
-      const uniqueActiveDays = new Set(
-        filteredSubtasks.map((st) => st.fields.created.slice(0, 10)),
-      ).size;
-      const totalTimeInSeconds = filteredSubtasks.reduce(
-        (total, subtask) => total + (subtask.fields.timeestimate || 0),
-        0,
-      );
-      const subtasksDone = filteredSubtasks.filter(
-        (st) => st.fields.status.name === "Done",
-      ).length;
-      const totalSubtasks = filteredSubtasks.length;
-      const doneRatio = totalSubtasks > 0 ? subtasksDone / totalSubtasks : 0;
-      const totalHoursFormatted = `${(totalTimeInSeconds / 3600).toFixed(1)}h`;
-      const originalUser = userMap.get(enrichedIssue.key);
+    // Kalkulasi akan secara alami menghasilkan 0 jika filteredSubtasks kosong
+    const uniqueActiveDays = new Set(
+      filteredSubtasks.map((st) => st.fields.created.slice(0, 10)),
+    ).size;
+    const totalTimeInSeconds = filteredSubtasks.reduce(
+      (total, subtask) => total + (subtask.fields.timeestimate || 0),
+      0,
+    );
+    const subtasksDone = filteredSubtasks.filter(
+      (st) => st.fields.status.name === "Done",
+    ).length;
+    const totalSubtasks = filteredSubtasks.length;
+    const doneRatio = totalSubtasks > 0 ? subtasksDone / totalSubtasks : 0;
+    const totalHoursFormatted = `${(totalTimeInSeconds / 3600).toFixed(1)}h`;
+    const originalUser = userMap.get(enrichedIssue.key);
 
-      return {
-        user: {
-          name: originalUser?.displayName || "Unknown User",
-          email: originalUser?.emailAddress || "",
-          avatar: enrichedIssue.fields.assignee?.avatarUrls["48x48"] || "",
+    return {
+      user: {
+        name: originalUser?.displayName || "Unknown User",
+        email: originalUser?.emailAddress || "",
+        avatar: enrichedIssue.fields.assignee?.avatarUrls["48x48"] || "",
+      },
+      stats: [
+        { label: "Total Point", value: uniqueActiveDays, icon: ICON_STAR },
+        {
+          label: "Subtask Est. Time",
+          value: totalHoursFormatted,
+          icon: ICON_CLOCK,
         },
-        stats: [
-          { label: "Total Point", value: uniqueActiveDays, icon: ICON_STAR },
-          {
-            label: "Subtask Est. Time",
-            value: totalHoursFormatted,
-            icon: ICON_CLOCK,
-          },
-          {
-            label: "Subtasks Done",
-            value: `${subtasksDone} / ${totalSubtasks}`,
-            icon: ICON_SUBTASK,
-          },
-        ],
-        sortable: {
-          points: uniqueActiveDays,
-          time: totalTimeInSeconds,
-          ratio: doneRatio,
+        {
+          label: "Subtasks Done",
+          value: `${subtasksDone} / ${totalSubtasks}`,
+          icon: ICON_SUBTASK,
         },
-      };
-    })
-    .filter((item) => item !== null) as any[];
+      ],
+      sortable: {
+        points: uniqueActiveDays,
+        time: totalTimeInSeconds,
+        ratio: doneRatio,
+      },
+    };
+  }) as any[]; // `.filter(item => item !== null)` juga dihapus
 
-  // Proses sorting dan finalisasi data (tidak berubah)
+  // =========================================================================
+  // AKHIR PERUBAHAN
+  // =========================================================================
+
   processedData.sort((a, b) => {
     const pointDiff = b.sortable.points - a.sortable.points;
     if (pointDiff !== 0) return pointDiff;

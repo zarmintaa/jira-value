@@ -65,7 +65,7 @@ const navigateToJiraDetail = (row: any) => {
       <TableView
         :error="errorMessage"
         :items="allJira"
-        :itemsPerPage="10"
+        :itemsPerPage="50"
         :loading="loading"
         :onRowClick="navigateToJiraDetail"
         :tHeader="headers"
