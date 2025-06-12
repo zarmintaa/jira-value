@@ -12,7 +12,7 @@ const error = ref<Error | null>(null);
 const router = useNuxtApp().$router;
 
 const allJira = computed(() => {
-  const mappedData = data.value.map((issue) => ({
+  return data.value.map((issue) => ({
     assignee: issue.displayName,
     key: issue.key,
     summary: issue.summary,
@@ -21,7 +21,6 @@ const allJira = computed(() => {
     description: issue.description,
     created: formatReadableDate(issue.created),
   }));
-  return mappedData;
 });
 
 const rawKeys = computed(() => {

@@ -17,20 +17,19 @@ const sourceUsers: Ref<JiraUser[]> = ref(dummyJiraUser || []);
 let controller: AbortController | null = null;
 
 // --- LOGIC ---
-// Fungsi ini sekarang tidak mengubah state apa pun, ia hanya fokus mengambil dan memproses data, lalu mengembalikannya.
 const getRank = async () => {
   controller = new AbortController();
   const signal = controller.signal;
 
   if (sourceUsers.value.length === 0) return [];
 
-  // 1. Fetch parents
+  const userMap = new Map(sourceUsers.value.map((user) => [user.key, user]));
+
+  // Langkah 1-4 tidak ada perubahan...
   const parentFetchPromises = sourceUsers.value.map((user) =>
     $fetch<JiraIssue>(`/api/jira/${user.key}`, { signal }),
   );
   const jiraIssues = await Promise.all(parentFetchPromises);
-
-  // 2. Fetch subtasks
   const subtaskFetchPromises = jiraIssues.flatMap((issue) =>
     (issue.fields.subtasks || []).map((subtask) =>
       $fetch<JiraIssue>(`/api/jira/${subtask.key}`, { signal }),
@@ -40,8 +39,6 @@ const getRank = async () => {
     subtaskFetchPromises.length > 0
       ? await Promise.all(subtaskFetchPromises)
       : [];
-
-  // 3. Group subtasks
   const subtasksByParentKey = new Map<string, JiraIssue[]>();
   for (const subtask of allFetchedSubtasks) {
     const parentKey = subtask.fields.parent?.key;
@@ -51,8 +48,6 @@ const getRank = async () => {
       subtasksByParentKey.get(parentKey)!.push(subtask);
     }
   }
-
-  // 4. Enrich parents with full subtask data
   const enrichedJiraIssues: JiraIssue[] = jiraIssues.map((parentIssue) => ({
     ...parentIssue,
     fields: {
@@ -61,40 +56,52 @@ const getRank = async () => {
     },
   }));
 
-  // 5. Proses data final
-  const finalData = enrichedJiraIssues.map((enrichedIssue, index) => {
-    const originalUser = sourceUsers.value.find(
-      (u) => u.key === enrichedIssue.key,
-    );
+  // =========================================================================
+  // PERUBAHAN LOGIKA PENGURUTAN
+  // =========================================================================
 
-    const allCreationTimestamps = [
-      enrichedIssue.fields.created,
-      ...enrichedIssue.fields.subtasks.map((st) => st.fields.created),
-    ];
-    const allDateStrings = allCreationTimestamps
-      .filter((ts) => ts)
-      .map((ts) => ts.slice(0, 10));
-    const uniqueDayCount = new Set(allDateStrings).size;
+  // 5. Proses data, dan siapkan nilai mentah untuk diurutkan
+  const processedData = enrichedJiraIssues.map((enrichedIssue) => {
+    // Kalkulasi nilai mentah
+    const uniqueActiveDays = new Set(
+      enrichedIssue.fields.subtasks.map((st) => st.fields.created.slice(0, 10)),
+    ).size;
 
+    console.log({
+      key: enrichedIssue.key,
+      days: new Set(
+        enrichedIssue.fields.subtasks.map((st) =>
+          st.fields.created.slice(0, 10),
+        ),
+      ),
+      dayCount: new Set(
+        enrichedIssue.fields.subtasks.map((st) =>
+          st.fields.created.slice(0, 10),
+        ),
+      ).size,
+    });
     const totalTimeInSeconds = enrichedIssue.fields.subtasks.reduce(
       (total, subtask) => total + (subtask.fields.timeestimate || 0),
       0,
     );
-    const totalHoursFormatted = `${(totalTimeInSeconds / 3600).toFixed(1)}h`;
-
     const subtasksDone = enrichedIssue.fields.subtasks.filter(
       (st) => st.fields.status.name === "Done",
     ).length;
+    const totalSubtasks = enrichedIssue.fields.subtasks.length;
+    const doneRatio = totalSubtasks > 0 ? subtasksDone / totalSubtasks : 0;
+
+    // Siapkan nilai untuk ditampilkan (formatted)
+    const totalHoursFormatted = `${(totalTimeInSeconds / 3600).toFixed(1)}h`;
+    const originalUser = userMap.get(enrichedIssue.key);
 
     return {
-      rank: index + 1,
       user: {
-        name: originalUser?.name || "Unknown User",
-        email: originalUser?.emailAddresses[0] || "",
-        avatar: originalUser?.avatarUrls["48x48"] || "",
+        name: originalUser?.displayName || "Unknown User",
+        email: originalUser?.emailAddress || "",
+        avatar: enrichedIssue?.fields?.assignee?.avatarUrls["48x48"] || "",
       },
       stats: [
-        { label: "Total Point", value: uniqueDayCount, icon: ICON_STAR },
+        { label: "Total Point", value: uniqueActiveDays, icon: ICON_STAR },
         {
           label: "Subtask Est. Time",
           value: totalHoursFormatted,
@@ -102,32 +109,57 @@ const getRank = async () => {
         },
         {
           label: "Subtasks Done",
-          value: `${subtasksDone} / ${enrichedIssue.fields.subtasks.length}`,
+          value: `${subtasksDone} / ${totalSubtasks}`,
           icon: ICON_SUBTASK,
         },
       ],
+      // Simpan nilai mentah untuk digunakan dalam fungsi sort
+      sortable: {
+        points: uniqueActiveDays,
+        time: totalTimeInSeconds,
+        ratio: doneRatio,
+      },
     };
   });
 
-  // PENTING: Kembalikan data yang sudah diproses
+  // 6. Urutkan data dengan logika berjenjang
+  processedData.sort((a, b) => {
+    // Prioritas 1: Urutkan berdasarkan Poin (descending)
+    const pointDiff = b.sortable.points - a.sortable.points;
+    if (pointDiff !== 0) {
+      return pointDiff;
+    }
+
+    // Prioritas 2: Jika poin sama, urutkan berdasarkan Waktu (descending)
+    const timeDiff = b.sortable.time - a.sortable.time;
+    if (timeDiff !== 0) {
+      return timeDiff;
+    }
+
+    // Prioritas 3: Jika waktu sama, urutkan berdasarkan Rasio Selesai (descending)
+    return b.sortable.ratio - a.sortable.ratio;
+  });
+
+  // 7. Tambahkan rank setelah diurutkan dan hapus properti 'sortable'
+  const finalData = processedData.map((item, index) => {
+    const { sortable, ...rest } = item; // Hapus 'sortable' dari objek final
+    return {
+      ...rest,
+      rank: index + 1,
+    };
+  });
+
   return finalData;
 };
 
 // --- LIFECYCLE & EXECUTION ---
-// Panggil `getRank` di dalam `useAsyncData` dengan opsi `lazy: true`
-// Nuxt akan secara otomatis mengelola state `pending`, `error`, dan `data`
 const {
   data: rankedUsersData,
   pending,
   error,
-} = await useAsyncData(
-  "get-user-ranks", // Kunci unik untuk data ini
-  () => getRank(), // Fungsi yang akan dijalankan
-  { lazy: true }, // <-- Tidak memblokir render di server
-);
+} = useAsyncData("get-user-ranks", () => getRank(), { lazy: true });
 
 onUnmounted(() => {
-  // Batalkan fetch jika user meninggalkan halaman sebelum selesai
   if (controller) {
     controller.abort();
   }

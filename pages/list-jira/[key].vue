@@ -2,8 +2,6 @@
 import { useRoute } from "vue-router";
 import type { JiraIssue, JiraSubtask } from "~/types/jira";
 import { useSafeFetch } from "~/composable/useSafeFetch";
-import { parseDDMONYYYY } from "~/utils/dateStringConverter";
-import { isSameDay } from "date-fns";
 import { formatReadableDate } from "~/utils/day";
 import dayjs from "dayjs";
 
