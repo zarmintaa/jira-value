@@ -26,41 +26,66 @@ const {
 
 // Fungsi untuk fetch semua subtask secara SERIAL (satu per satu)
 const fetchAllSubtaskDetails = async () => {
-  const allSubtasks: JiraSubtask[] = mainJiraIssue.value?.fields.subtasks || [];
-  if (allSubtasks.length === 0) {
+  const allSubtasksStubs: JiraSubtask[] =
+    mainJiraIssue.value?.fields.subtasks || [];
+  if (allSubtasksStubs.length === 0) {
     console.log("Tidak ada subtask untuk di-fetch.");
     return;
   }
 
-  console.log(
-    `Memulai fetch untuk ${allSubtasks.length} subtask secara serial...`,
-  );
+  // Cek apakah komponen masih aktif sebelum memulai fetch
+  if (!isComponentActive) return;
+
+  console.log(`Memulai bulk fetch untuk ${allSubtasksStubs.length} subtask...`);
   loadingSubtasks.value = true;
   subtaskDetails.value = [];
 
   try {
-    for (const subtask of allSubtasks) {
-      // cek apakah komponen aktif
-      if (!isComponentActive) {
-        console.log("Loop dihentikan karena komponen tidak lagi aktif.");
-        return;
-      }
-      const { data: subtaskData } = await useFetch<JiraIssue>(
-        `/api/jira/${subtask.key}`,
-        { key: `subtask-${subtask.key}` },
-      );
-      if (subtaskData.value) {
-        subtaskDetails.value.push(subtaskData.value);
-      }
-    }
-    console.log(
-      "Semua detail subtask berhasil di-fetch:",
-      subtaskDetails.value,
+    // 1. Kumpulkan semua kunci subtask
+    const subtaskKeys = allSubtasksStubs.map((s) => s.key);
+
+    // 2. Buat query JQL
+    const jql = `key in (${subtaskKeys.join(",")})`;
+    const requiredFields = [
+      "summary",
+      "status",
+      "created",
+      "timeestimate",
+      "parent",
+      "assignee",
+    ];
+
+    // 3. Lakukan SATU kali fetch besar
+    const searchResult = await $fetch<{ issues: JiraIssue[] }>(
+      "/api/jira/search",
+      {
+        method: "POST",
+        body: {
+          jql,
+          fields: requiredFields,
+          maxResults: subtaskKeys.length,
+        },
+      },
     );
+
+    // 4. Langsung isi hasilnya
+    if (isComponentActive) {
+      // Cek lagi sebelum update state
+      subtaskDetails.value = searchResult.issues;
+      console.log(
+        "Semua detail subtask berhasil di-fetch secara bulk:",
+        subtaskDetails.value,
+      );
+    }
   } catch (error) {
-    console.error("Gagal saat mem-fetch detail subtask:", error);
+    console.error("Gagal saat mem-fetch detail subtask secara bulk:", error);
+    // Anda bisa memanggil error store di sini jika perlu
+    // const errorStore = useErrorStore();
+    // errorStore.addError(...)
   } finally {
-    loadingSubtasks.value = false;
+    if (isComponentActive) {
+      loadingSubtasks.value = false;
+    }
   }
 };
 
