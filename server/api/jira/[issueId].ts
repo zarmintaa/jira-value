@@ -1,3 +1,4 @@
+//api/jira/[issueId].ts
 import { Buffer } from "node:buffer";
 
 export default defineEventHandler(async (event) => {

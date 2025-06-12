@@ -73,13 +73,13 @@ export const dummyJiraUser: JiraUser[] = [
     description: "Jira IT BOA",
     created: "2025-01-01",
   },
-  {
-    key: "ITBOA-13585",
-    summary: "Muhammad Fadhil Hilmi - 10093924",
-    status: "To-Do",
-    displayName: "BOA - Muhammad Fadhil Hilmi",
-    emailAddress: "v.fadhil.hilmi@adira.co.id",
-    description: "Jira IT BOA",
-    created: "2025-01-01",
-  },
+  // {
+  //   key: "ITBOA-13585",
+  //   summary: "Muhammad Fadhil Hilmi - 10093924",
+  //   status: "To-Do",
+  //   displayName: "BOA - Muhammad Fadhil Hilmi",
+  //   emailAddress: "v.fadhil.hilmi@adira.co.id",
+  //   description: "Jira IT BOA",
+  //   created: "2025-01-01",
+  // },
 ];
