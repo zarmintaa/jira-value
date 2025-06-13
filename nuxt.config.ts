@@ -6,10 +6,14 @@ export default defineNuxtConfig({
   routeRules: {
     "/": { redirect: { to: "/dashboard", statusCode: 301 } },
   },
-  modules: ["@pinia/nuxt"],
+  modules: ["@pinia/nuxt", "@nuxtjs/supabase"],
   runtimeConfig: {
     baseUrl: process.env.JIRA_BASE_URL,
     email: process.env.JIRA_API_EMAIL,
     token: process.env.JIRA_API_TOKEN,
+  },
+  supabase: {
+    // Tambahkan baris ini untuk mematikan fitur redirect otomatis
+    redirect: false,
   },
 });

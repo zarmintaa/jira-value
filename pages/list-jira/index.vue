@@ -1,48 +1,66 @@
 <script lang="ts" setup>
-import { dummyJiraUser } from "~/data/dummy-jira";
+// 1. Hapus import data dummy
+// import { dummyJiraUser } from "~/data/dummy-jira";
+import { computed, ref } from "vue";
 import type { Ref, UnwrapRef } from "vue";
-import { ref } from "vue";
-import type { JiraUser } from "~/types/jira";
+// Hapus juga import JiraUser yang lama jika tidak dipakai di tempat lain
+// import type { JiraUser } from "~/types/jira";
 import TableView from "~/components/table/TableView.vue";
 import { formatReadableDate } from "~/utils/day";
+// 2. Gunakan composable useUsers yang sudah kita buat
+import { useUsers } from "~/composable/jira/useUser";
 
-const data: Ref<UnwrapRef<JiraUser>[]> = ref(dummyJiraUser);
-const loading = ref(false);
-const error = ref<Error | null>(null);
 const router = useNuxtApp().$router;
+const { getAllUsers } = useUsers();
 
+// 3. Ambil data secara asinkron menggunakan useAsyncData
+// Ini cara terbaik di Nuxt karena menangani SSR, loading, dan error secara otomatis.
+const {
+  data: jiraUsers,
+  pending: loading,
+  error,
+} = await useAsyncData(
+  "all-jira-users",
+  () => getAllUsers(),
+  { lazy: true }, // <-- Tambahkan opsi ini
+);
+// 4. Sesuaikan computed property 'allJira' untuk memetakan data dari Supabase
 const allJira = computed(() => {
-  return data.value.map((issue) => ({
-    assignee: issue.displayName,
-    key: issue.key,
-    summary: issue.summary,
-    status: issue.status,
-    email: issue.emailAddress,
-    description: issue.description,
-    created: formatReadableDate(issue.created),
-  }));
-});
-
-const rawKeys = computed(() => {
-  if (!allJira.value) return [];
-
-  if (allJira.value.length === 0) {
+  // Jika jiraUsers.value masih kosong atau null, kembalikan array kosong
+  if (!jiraUsers.value) {
     return [];
   }
 
-  const keys = Object.keys(allJira.value[0] || {});
+  // Petakan data dari struktur Supabase ke struktur yang dibutuhkan oleh TableView
+  return jiraUsers.value.map((user) => ({
+    // nama kolom di sini akan menjadi 'key' untuk header tabel
+    key: user.key,
+    assignee: user.display_name,
+    summary: user.summary,
+    // Kita tambahkan nama squad dari data relasi
+    squad: user.jira_squads?.display_name ?? "Tanpa Squad",
+    email: user.email_address,
+    // Kolom 'status' sudah kita hapus, jadi hilangkan dari sini
+    // status: user.status,
+    created: formatReadableDate(user.created), // gunakan 'created_at' dari Supabase
+  }));
+});
 
-  const excludedKeys = [""];
-
-  return keys.filter((key) => !excludedKeys.includes(key));
+// Computed `rawKeys` dan `headers` di bawah ini akan bekerja secara otomatis
+// dengan struktur baru dari `allJira` tanpa perlu diubah.
+const rawKeys = computed(() => {
+  if (!allJira.value || allJira.value.length === 0) {
+    return [];
+  }
+  return Object.keys(allJira.value[0]);
 });
 
 const headers = computed(() =>
-  rawKeys.value.map((key) =>
-    key
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" "),
+  rawKeys.value.map(
+    (key) =>
+      key
+        .replace(/_/g, " ") // Ganti underscore dengan spasi
+        .replace(/\b\w/g, (char) => char.toUpperCase()), // Kapitalisasi setiap kata
   ),
 );
 

@@ -25,8 +25,9 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@nuxtjs/supabase": "^1.5.1",
+    "@nuxtjs/supabase": "^1.5.2",
     "@types/lodash": "^4.17.17",
-    "@types/xlsx": "^0.0.35"
+    "@types/xlsx": "^0.0.35",
+    "supabase": "^2.24.3"
   }
 }
