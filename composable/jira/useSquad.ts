@@ -1,7 +1,7 @@
 // /composables/useSquads.ts
 
-import type { JiraSquad } from "~/data/dummy-jira";
 import type { NewSquadPayload } from "~/types/dto/jira-dto";
+import type { JiraSquad } from "~/types/supabase-table";
 
 export const useSquads = () => {
   // Fungsi untuk membuat squad baru
