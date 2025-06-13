@@ -20,7 +20,7 @@ const {
   pending: loadingMainIssue, // True while fetching the main issue
   error: mainIssueError, // Error for fetching the main issue
 } = await useSafeFetch<JiraIssue>(`/api/jira/${jiraKey}`, {
-  lazy: true,
+  // lazy: true,
   key: `issue-${jiraKey}`, // Menambahkan key untuk caching
 });
 
@@ -461,7 +461,8 @@ onUnmounted(() => {
   background-color: #f0f4f7; /* Lighter background for description */
   padding: 1.25rem;
   border-radius: 0.5rem;
-  font-family: "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
+  font-family:
+    "SF Mono", "Segoe UI Mono", monospace; /* Modern monospace font */
   word-break: break-word;
   line-height: 1.6;
   color: #343a40;

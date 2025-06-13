@@ -21,7 +21,7 @@ const {
 } = await useAsyncData(
   "all-jira-users",
   () => getAllUsers(),
-  { lazy: true }, // <-- Tambahkan opsi ini
+  // { lazy: true }, // <-- Tambahkan opsi ini
 );
 // 4. Sesuaikan computed property 'allJira' untuk memetakan data dari Supabase
 const allJira = computed(() => {
