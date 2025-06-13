@@ -12,6 +12,8 @@ export interface JiraUserWithSquad {
     display_name: string;
     lead_uuid: string;
   } | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Tipe data minimal untuk merepresentasikan info pengguna

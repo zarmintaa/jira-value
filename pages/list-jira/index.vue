@@ -2,7 +2,6 @@
 // 1. Hapus import data dummy
 // import { dummyJiraUser } from "~/data/dummy-jira";
 import { computed, ref } from "vue";
-import type { Ref, UnwrapRef } from "vue";
 // Hapus juga import JiraUser yang lama jika tidak dipakai di tempat lain
 // import type { JiraUser } from "~/types/jira";
 import TableView from "~/components/table/TableView.vue";
@@ -42,7 +41,7 @@ const allJira = computed(() => {
     email: user.email_address,
     // Kolom 'status' sudah kita hapus, jadi hilangkan dari sini
     // status: user.status,
-    created: formatReadableDate(user.created), // gunakan 'created_at' dari Supabase
+    created: formatReadableDate(user.created_at), // gunakan 'created_at' dari Supabase
   }));
 });
 
