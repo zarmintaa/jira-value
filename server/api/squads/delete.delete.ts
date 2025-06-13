@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   if (!uuid) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Squad UUID is required",
+      statusMessage: "squads UUID is required",
     });
   }
 
@@ -20,5 +20,5 @@ export default defineEventHandler(async (event) => {
   }
 
   // Kirim response sukses
-  return { status: 200, message: "Squad berhasil dihapus" };
+  return { status: 200, message: "squads berhasil dihapus" };
 });

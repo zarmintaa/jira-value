@@ -20,7 +20,7 @@ const {
   pending: loadingMainIssue, // True while fetching the main issue
   error: mainIssueError, // Error for fetching the main issue
 } = await useSafeFetch<JiraIssue>(`/api/jira/${jiraKey}`, {
-  // lazy: true,
+  lazy: true,
   key: `issue-${jiraKey}`, // Menambahkan key untuk caching
 });
 

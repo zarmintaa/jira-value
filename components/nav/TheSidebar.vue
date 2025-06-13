@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import IconUserGroups from "~/components/icons/IconUserGroups.vue";
 import IconHome from "~/components/icons/IconHome.vue";
-import IconLabel from "~/components/icons/IconLabel.vue";
 import IconChartLineUp from "~/components/icons/IconChartLineUp.vue";
 import IconAdministrator from "~/components/icons/IconAdministrator.vue";
 
@@ -24,6 +23,11 @@ const menuItems = [
     name: "Ranking",
     routeName: "ranking",
     icon: IconChartLineUp,
+  },
+  {
+    name: "Squads",
+    routeName: "squads",
+    icon: IconUserGroups,
   },
   /*{
     name: "Error Debug",

@@ -50,3 +50,9 @@ export interface JiraSquad {
   created_at: string;
   updated_at: string;
 }
+
+export interface JiraUserBasicInfo {
+  uuid: string;
+  key: string;
+  display_name: string;
+}

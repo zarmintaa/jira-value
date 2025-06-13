@@ -21,7 +21,7 @@ const {
 } = await useAsyncData(
   "all-jira-users",
   () => getAllUsers(),
-  // { lazy: true }, // <-- Tambahkan opsi ini
+  { lazy: true }, // <-- Tambahkan opsi ini
 );
 // 4. Sesuaikan computed property 'allJira' untuk memetakan data dari Supabase
 const allJira = computed(() => {
@@ -36,8 +36,8 @@ const allJira = computed(() => {
     key: user.key,
     assignee: user.display_name,
     summary: user.summary,
-    // Kita tambahkan nama squad dari data relasi
-    squad: user.jira_squads?.display_name ?? "Tanpa Squad",
+    // Kita tambahkan nama squads dari data relasi
+    squad: user.jira_squads?.display_name ?? "Tanpa squads",
     email: user.email_address,
     // Kolom 'status' sudah kita hapus, jadi hilangkan dari sini
     // status: user.status,

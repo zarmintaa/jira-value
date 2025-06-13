@@ -4,7 +4,7 @@ import type { NewSquadPayload } from "~/types/dto/jira-dto";
 import type { JiraSquad } from "~/types/supabase-table";
 
 export const useSquads = () => {
-  // Fungsi untuk membuat squad baru
+  // Fungsi untuk membuat squads baru
   const createSquad = async (payload: NewSquadPayload) => {
     try {
       // Panggil API endpoint yang kita buat di server
@@ -13,16 +13,16 @@ export const useSquads = () => {
         body: payload,
       });
 
-      console.log("Squad baru berhasil dibuat:", newSquad);
+      console.log("squads baru berhasil dibuat:", newSquad);
       return newSquad as JiraSquad;
     } catch (error) {
-      console.error("Gagal membuat squad:", error);
+      console.error("Gagal membuat squads:", error);
       // Anda bisa menampilkan notifikasi error ke pengguna di sini
       return null;
     }
   };
 
-  // Fungsi untuk mengambil semua squad
+  // Fungsi untuk mengambil semua squads
   const getAllSquads = async () => {
     const client = useSupabaseClient();
     try {
@@ -35,12 +35,12 @@ export const useSquads = () => {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Gagal mengambil daftar squad:", error);
+      console.error("Gagal mengambil daftar squads:", error);
       return null;
     }
   };
 
-  // Fungsi untuk mengambil detail satu squad berdasarkan UUID
+  // Fungsi untuk mengambil detail satu squads berdasarkan UUID
   const getSquadById = async (squadId: string) => {
     const client = useSupabaseClient();
     try {
@@ -50,7 +50,7 @@ export const useSquads = () => {
           `
         *,
         lead:jira_users!fk_squad_lead(uuid, key, display_name),
-        jira_users(uuid, key, display_name)
+        jira_users!jira_users_squad_uuid_fkey(uuid, key, display_name)
       `,
         )
         .eq("uuid", squadId)
@@ -76,7 +76,7 @@ export const useSquads = () => {
       });
       return updatedSquad;
     } catch (error) {
-      console.error("Gagal mengupdate squad:", error);
+      console.error("Gagal mengupdate squads:", error);
       return null;
     }
   };
@@ -89,7 +89,7 @@ export const useSquads = () => {
       });
       return true; // Berhasil
     } catch (error) {
-      console.error("Gagal menghapus squad:", error);
+      console.error("Gagal menghapus squads:", error);
       return false; // Gagal
     }
   };

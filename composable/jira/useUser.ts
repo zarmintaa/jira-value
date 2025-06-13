@@ -43,7 +43,7 @@ export const useUsers = () => {
     try {
       const { data, error } = await client
         .from("jira_users")
-        .select("*, jira_squads(*)") // Ambil semua detail squad
+        .select("*, jira_squads(*)") // Ambil semua detail squads
         .eq("uuid", uuid)
         .single();
       if (error) throw error;
@@ -79,11 +79,28 @@ export const useUsers = () => {
     }
   };
 
+  const getAvailableUsers = async () => {
+    const client = useSupabaseClient();
+    try {
+      const { data, error } = await client
+        .from("jira_users")
+        .select("uuid, display_name, key")
+        .is("squad_uuid", null) // Hanya ambil user yang squad_uuid nya NULL
+        .order("display_name");
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error("Gagal mengambil user yang tersedia:", err);
+      return [];
+    }
+  };
+
   return {
     createUser,
     getAllUsers,
     getUserById,
     updateUser,
     deleteUser,
+    getAvailableUsers,
   };
 };

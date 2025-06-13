@@ -37,6 +37,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // 5. Kembalikan data squad yang baru dibuat ke frontend
+  // 5. Kembalikan data squads yang baru dibuat ke frontend
   return data;
 });

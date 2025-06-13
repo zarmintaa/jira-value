@@ -10,7 +10,7 @@ export type NewUserPayload = {
   display_name: string;
   email_address: string;
   description?: string;
-  // User bisa saja dibuat tanpa langsung masuk ke squad
+  // User bisa saja dibuat tanpa langsung masuk ke squads
   squad_uuid: string | null;
 };
 

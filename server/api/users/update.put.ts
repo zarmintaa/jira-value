@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     // Ini akan menangkap error dari trigger jika mencoba memindahkan seorang lead
-    if (error.message.includes("Invalid move: This user leads squad")) {
+    if (error.message.includes("Invalid move: This user leads squads")) {
       throw createError({ statusCode: 409, statusMessage: error.message });
     }
     throw createError({ statusCode: 500, statusMessage: error.message });

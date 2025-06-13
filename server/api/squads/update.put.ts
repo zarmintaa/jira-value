@@ -4,7 +4,7 @@ import { serverSupabaseClient } from "#supabase/server";
 
 // Tipe data untuk payload update
 type UpdateSquadPayload = {
-  uuid: string; // Wajib ada untuk tahu squad mana yang di-update
+  uuid: string; // Wajib ada untuk tahu squads mana yang di-update
   display_name?: string;
   lead_uuid?: string | null;
 };
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   if (!payload.uuid) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Squad UUID is required",
+      statusMessage: "squads UUID is required",
     });
   }
 
@@ -31,8 +31,8 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (error) {
-    // Cek jika error karena trigger kita (misal, lead bukan anggota squad)
-    if (error.message.includes("A squad lead must be a member")) {
+    // Cek jika error karena trigger kita (misal, lead bukan anggota squads)
+    if (error.message.includes("A squads lead must be a member")) {
       throw createError({ statusCode: 409, statusMessage: error.message });
     }
     throw createError({ statusCode: 500, statusMessage: error.message });
