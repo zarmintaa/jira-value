@@ -6,6 +6,7 @@ import type { JiraIssue, JiraUser } from "~/types/jira.js";
 import { ref, onUnmounted } from "vue";
 import { dummyJiraUser } from "~/data/dummy-jira.js";
 import { useErrorStore } from "~/stores/error-store";
+import { gsap } from "gsap";
 
 // --- STATE MANAGEMENT ---
 const startDate = ref("");
@@ -16,6 +17,7 @@ let controller: AbortController | null = null;
 const rankedUsersData = ref<any[] | null>(null);
 const pending = ref(false);
 const errorStore = useErrorStore();
+const rankListContainer = ref<HTMLDivElement | null>(null); // <-- 2. Ref untuk kontainer daftar
 
 // Konstanta ikon... (tidak berubah)
 const ICON_CLOCK = "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z";
@@ -185,6 +187,60 @@ const handleFilter = async () => {
     pending.value = false;
   }
 };
+
+// --- 3. GSAP ANIMATION ---
+// Gunakan `watch` untuk mendeteksi perubahan data dan memicu animasi
+// Di dalam <script setup> di Ranking.vue
+
+watch(rankedUsersData, (newValue) => {
+  if (newValue && newValue.length > 0) {
+    nextTick(() => {
+      if (rankListContainer.value) {
+        const cards = rankListContainer.value.children;
+
+        // 1. Set keadaan awal semua kartu (tersembunyi)
+        gsap.set(cards, { autoAlpha: 0 });
+
+        // 2. Buat timeline utama untuk mengatur semua animasi
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        // 3. Animasikan setiap kartu dengan stagger
+        tl.to(cards, {
+          autoAlpha: 1, // autoAlpha = opacity + visibility (lebih baik untuk performa)
+          duration: 1,
+          stagger: 1, // Jeda antar kartu
+        });
+
+        // 4. Animasikan elemen di dalam setiap kartu (opsional, tapi ini yang membuatnya keren)
+        // Animasi ini berjalan sedikit setelah kartu mulai muncul
+        gsap.from(gsap.utils.toArray(".rank-anim"), {
+          duration: 0.6,
+          scale: 0.5,
+          opacity: 0,
+          delay: 0.2,
+          stagger: 0.5,
+          ease: "back.out(1.7)",
+        });
+
+        gsap.from(gsap.utils.toArray(".user-anim"), {
+          duration: 0.6,
+          y: 20,
+          opacity: 0,
+          delay: 0.4,
+          stagger: 0.1,
+        });
+
+        gsap.from(gsap.utils.toArray(".stat-anim"), {
+          duration: 0.5,
+          x: -20,
+          opacity: 0,
+          delay: 0.6,
+          stagger: 0.05,
+        });
+      }
+    });
+  }
+});
 
 onUnmounted(() => {
   if (controller) controller.abort();

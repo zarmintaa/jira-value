@@ -43,21 +43,31 @@ defineProps({
           />
         </svg>
       </div>
-      <span class="rank-number" :class="`rank-color-${rank}`">{{ rank }}</span>
+      <span class="rank-number rank-anim" :class="`rank-color-${rank}`">{{
+        rank
+      }}</span>
     </div>
 
     <div class="divider"></div>
 
     <div class="card-content">
       <div class="user-profile">
-        <img :src="user.avatar" :alt="`${user.name}'s Avatar`" class="avatar" />
-        <div class="user-info">
+        <img
+          :src="user.avatar"
+          :alt="`${user.name}'s Avatar`"
+          class="avatar user-anim"
+        />
+        <div class="user-info user-anim">
           <h5 class="user-name">{{ user.name }}</h5>
           <p class="user-email">{{ user.email }}</p>
         </div>
       </div>
       <div class="stats-container">
-        <div v-for="stat in stats" :key="stat.label" class="stat-block">
+        <div
+          v-for="stat in stats"
+          :key="stat.label"
+          class="stat-block stat-anim"
+        >
           <span class="stat-value">{{ stat.value }}</span>
           <span class="stat-label">{{ stat.label }}</span>
         </div>
