@@ -3,81 +3,116 @@ import { ref, computed } from "vue";
 import dayjs from "dayjs";
 import SquadPerformanceTable from "~/components/dashboard/SquadPerformanceTable.vue";
 
-// State HANYA untuk filter, tidak ada lagi kpiData atau watch
-const selectedRange = ref("7d");
-const controller = new AbortController();
-
-// Computed untuk tanggal (tidak berubah)
-const dateRange = computed(() => {
-  const end = dayjs();
-  let start;
-  switch (selectedRange.value) {
-    case "30d":
-      start = dayjs().subtract(30, "day");
-      break;
-    case "this_month":
-      start = dayjs().startOf("month");
-      break;
-    default:
-      start = dayjs().subtract(7, "day");
-  }
-  return {
-    startDate: start.format("YYYY-MM-DD"),
-    endDate: end.format("YYYY-MM-DD"),
-  };
+// State untuk form filter, kita kosongkan nilai awalnya
+const filterForm = ref({
+  startDate: "",
+  endDate: "",
 });
 
-// useAsyncData menjadi SATU-SATUNYA sumber kebenaran data kita
-const { data, pending: isLoading } = useAsyncData(
-  "kpi-data",
-  () => $fetch("/api/dashboard/kpis", { query: dateRange.value }),
+// State untuk menandai apakah filter sudah pernah dijalankan
+const hasFiltered = ref(false);
+const isLoading = ref(false);
+
+// useAsyncData untuk KPI Cards
+const { data: kpiData, execute: fetchKpis } = useAsyncData(
+  "dashboard-kpi-data",
+  () => $fetch("/api/dashboard/kpis", { query: filterForm.value }),
   {
-    watch: [selectedRange],
+    immediate: false,
     default: () => ({
       totalUsers: 0,
       totalSquads: 0,
       totalSubtasksCreated: 0,
       totalHours: 0.0,
     }),
-    lazy: true,
   },
 );
 
-const { data: squadPerformanceData, pending: squadLoading } = useAsyncData(
-  "squad-performance-data",
-  () => $fetch("/api/dashboard/squad-performance", { query: dateRange.value }),
-  {
-    watch: [selectedRange],
-    default: () => [],
-    lazy: true,
-  },
-);
+const { data: squadPerformanceData, execute: fetchSquadPerformance } =
+  useAsyncData(
+    "dashboard-squad-performance-data",
+    () =>
+      $fetch("/api/dashboard/squad-performance", { query: filterForm.value }),
+    {
+      immediate: false,
+      default: () => [],
+    },
+  );
 
-onUnmounted(() => {
-  if (controller) {
-    console.log("Membatalkan request KPI karena pindah halaman...");
-    controller.abort();
+// Fungsi untuk memicu kedua fetch saat tombol ditekan
+async function handleFilterSubmit() {
+  if (!filterForm.value.startDate || !filterForm.value.endDate) {
+    alert("Silakan isi Tanggal Mulai dan Tanggal Selesai.");
+    return;
   }
-});
+
+  hasFiltered.value = true;
+  isLoading.value = true; // <-- Atur loading jadi true DI SINI
+
+  try {
+    // Jalankan kedua pengambilan data secara paralel
+    await Promise.all([fetchKpis(), fetchSquadPerformance()]);
+  } catch (error) {
+    // Penanganan error bisa ditambahkan di sini jika perlu
+    console.error("Terjadi kesalahan saat filter:", error);
+  } finally {
+    isLoading.value = false; // <-- Atur loading jadi false SETELAH selesai
+  }
+}
+
+// State loading gabungan untuk UI
 </script>
 
-<
 <template>
   <div>
-    <div
-      class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
-    >
+    <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="fw-bold mb-0">Dashboard</h2>
-      <div class="col-12 col-md-4 col-lg-3 col-xl-2">
-        <select
-          v-model="selectedRange"
-          class="form-select"
-          :disabled="isLoading"
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <form
+          @submit.prevent="handleFilterSubmit"
+          class="row g-3 align-items-end"
         >
-          <option value="7d">7 Hari Terakhir</option>
-          <option value="30d">30 Hari Terakhir</option>
-          <option value="this_month">Bulan Ini</option>
-        </select>
+          <div class="col-md">
+            <label for="startDate" class="form-label small"
+              >Tanggal Mulai</label
+            >
+            <input
+              id="startDate"
+              v-model="filterForm.startDate"
+              type="date"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md">
+            <label for="endDate" class="form-label small"
+              >Tanggal Selesai</label
+            >
+            <input
+              id="endDate"
+              v-model="filterForm.endDate"
+              type="date"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-auto">
+            <button
+              type="submit"
+              class="btn btn-primary w-100"
+              :disabled="isLoading"
+            >
+              <span
+                v-if="isLoading"
+                class="spinner-border spinner-border-sm me-1"
+              ></span>
+              {{ isLoading ? "Memuat..." : "Terapkan" }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -108,7 +143,7 @@ onUnmounted(() => {
                 <span class="placeholder col-6"></span>
               </div>
               <h3 v-else class="fw-bold mb-0">
-                {{ data?.totalHours?.toFixed(1) ?? "0.0" }}h
+                {{ kpiData?.totalHours?.toFixed(1) ?? "0.0" }}h
               </h3>
             </div>
           </div>
@@ -138,7 +173,7 @@ onUnmounted(() => {
                 <span class="placeholder col-6"></span>
               </div>
               <h3 v-else class="fw-bold mb-0">
-                {{ data?.totalSubtasksCreated ?? 0 }}
+                {{ kpiData?.totalSubtasksCreated ?? 0 }}
               </h3>
             </div>
           </div>
@@ -171,7 +206,9 @@ onUnmounted(() => {
               <div v-if="isLoading" class="placeholder-glow">
                 <span class="placeholder col-6"></span>
               </div>
-              <h3 v-else class="fw-bold mb-0">{{ data?.totalUsers ?? 0 }}</h3>
+              <h3 v-else class="fw-bold mb-0">
+                {{ kpiData?.totalUsers ?? 0 }}
+              </h3>
             </div>
           </div>
         </div>
@@ -202,17 +239,19 @@ onUnmounted(() => {
               <div v-if="isLoading" class="placeholder-glow">
                 <span class="placeholder col-6"></span>
               </div>
-              <h3 v-else class="fw-bold mb-0">{{ data?.totalSquads ?? 0 }}</h3>
+              <h3 v-else class="fw-bold mb-0">
+                {{ kpiData?.totalSquads ?? 0 }}
+              </h3>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="mt-5">
+    <div class="mt-4">
       <SquadPerformanceTable
         :squads="squadPerformanceData"
-        :loading="squadLoading"
+        :loading="isLoading"
       />
     </div>
   </div>
