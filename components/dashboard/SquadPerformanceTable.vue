@@ -79,7 +79,7 @@ defineProps<{
                     >
                     <div class="progress" style="width: 100%">
                       <div
-                        class="progress-bar"
+                        class="progress-bar gradient"
                         role="progressbar"
                         :style="{ width: `${squad.completionRatio}%` }"
                         :aria-valuenow="squad.completionRatio"
@@ -105,3 +105,9 @@ defineProps<{
     </div>
   </div>
 </template>
+
+<style scoped>
+.gradient {
+  background: linear-gradient(to right, #300171, #007bff) !important;
+}
+</style>
