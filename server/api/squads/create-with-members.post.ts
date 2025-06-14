@@ -24,8 +24,23 @@ export default defineEventHandler(async (event) => {
   });
 
   if (error) {
-    throw createError({ statusCode: 500, statusMessage: error.message });
+    // Cek jika error adalah karena 'unique constraint violation' (kode 23505)
+    if (error.code === "23505") {
+      // Buat pesan yang lebih ramah pengguna
+      throw createError({
+        statusCode: 409, // 409 Conflict adalah status yang tepat untuk data duplikat
+        statusMessage: "Gagal: Email atau nama squad sudah terdaftar.",
+      });
+    }
+
+    // Untuk error lainnya, kembalikan pesan umum
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Terjadi kesalahan pada server, silakan coba lagi.",
+    });
   }
+
+  return { new_squad_uuid: data };
 
   return { new_squad_uuid: data };
 });

@@ -21,6 +21,12 @@ const isSuccessModalVisible = ref(false); // Untuk modal sukses
 const isDeleting = ref(false);
 const errorMessage = ref<string | null>(null); // Untuk modal error
 
+// FUNGSI BARU: Dipanggil saat modal sukses ditutup
+function closeModalAndRedirect() {
+  isSuccessModalVisible.value = false;
+  // Redirect terjadi di sini
+  router.push("/squads");
+}
 // ... (sisa kode `useAsyncData`, `computed`, `getInitials` tetap sama) ...
 const {
   data: squad,
@@ -68,21 +74,17 @@ function closeSuccessModalAndRedirect() {
 
 // 4. Perbarui fungsi handleDeleteSquad
 async function handleDeleteSquad() {
-  console.log("Fungsi handleDeleteSquad MULAI dijalankan!");
   isDeleting.value = true;
-  errorMessage.value = null; // Reset pesan error
+  errorMessage.value = null;
 
-  // Panggil fungsi delete
   const success = await deleteSquad(squadId);
 
-  // Tutup modal konfirmasi
-  isDeleteModalVisible.value = false;
+  isDeleteModalVisible.value = false; // Tutup modal konfirmasi
 
   if (success) {
-    // Jika berhasil, tampilkan MODAL SUKSES
+    // Jika berhasil, JANGAN langsung redirect. Tampilkan modal sukses.
     isSuccessModalVisible.value = true;
   } else {
-    // Jika gagal, tampilkan MODAL ERROR
     errorMessage.value = "Gagal menghapus squad. Silakan coba lagi.";
   }
 
@@ -108,9 +110,41 @@ async function handleDeleteSquad() {
           Apakah Anda yakin ingin menghapus squad
           <strong>"{{ squad?.display_name }}"</strong>?
         </p>
-        <p class="text-danger small">Tindakan ini tidak dapat dibatalkan.</p>
       </template>
     </AppModal>
+
+    <AppModal
+      :show="isSuccessModalVisible"
+      @close="closeModalAndRedirect"
+      @confirm="closeModalAndRedirect"
+      confirm-text="OK"
+    >
+      <template #header>
+        <h5 class="fw-semibold mb-0 text-success">Berhasil!</h5>
+      </template>
+      <template #default>
+        <p>Squad telah berhasil dihapus.</p>
+      </template>
+    </AppModal>
+
+    <AppModal
+      :show="!!errorMessage"
+      @close="errorMessage = null"
+      confirm-text="Tutup"
+    >
+      <template #header>
+        <h5 class="fw-semibold mb-0 text-danger">Terjadi Kesalahan</h5>
+      </template>
+      <template #default>
+        <p>{{ errorMessage }}</p>
+      </template>
+    </AppModal>
+
+    <!--    <DebugModal
+      :show="isDeleteModalVisible"
+      @close="isDeleteModalVisible = false"
+      @confirm="handleDeleteSquad"
+    />-->
   </div>
   <div v-if="pending" class="text-center p-5">
     <div class="spinner-border" role="status"></div>
@@ -131,9 +165,9 @@ async function handleDeleteSquad() {
           <NuxtLink :to="`/squads/${squadId}/edit`" class="btn btn-secondary">
             Edit
           </NuxtLink>
-          <!--          <button class="btn btn-danger" @click="isDeleteModalVisible = true">-->
-          <!--            Delete-->
-          <!--          </button>-->
+          <button class="btn btn-danger" @click="isDeleteModalVisible = true">
+            Delete
+          </button>
         </div>
       </div>
       <div class="card-body p-4">

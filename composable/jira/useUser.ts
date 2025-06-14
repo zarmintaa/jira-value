@@ -43,7 +43,7 @@ export const useUsers = () => {
     try {
       const { data, error } = await client
         .from("jira_users")
-        .select("*, jira_squads(*)") // Ambil semua detail squads
+        .select("*, jira_squads:jira_squads!jira_users_squad_uuid_fkey(*)")
         .eq("uuid", uuid)
         .single();
       if (error) throw error;
@@ -95,6 +95,23 @@ export const useUsers = () => {
     }
   };
 
+  const getUserByKey = async (key: string) => {
+    const client = useSupabaseClient();
+    try {
+      const { data, error } = await client
+        .from("jira_users")
+        // Ambil data user beserta detail squad-nya
+        .select("*, jira_squads(*)")
+        .eq("key", key) // Cari berdasarkan kolom 'key'
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error(`Gagal mengambil user dengan key ${key}:`, err);
+      return null;
+    }
+  };
+
   return {
     createUser,
     getAllUsers,
@@ -102,5 +119,6 @@ export const useUsers = () => {
     updateUser,
     deleteUser,
     getAvailableUsers,
+    getUserByKey,
   };
 };

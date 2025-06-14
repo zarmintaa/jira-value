@@ -1,3 +1,5 @@
+// list-jira/index
+
 <script lang="ts" setup>
 // 1. Hapus import data dummy
 // import { dummyJiraUser } from "~/data/dummy-jira";

@@ -43,17 +43,24 @@ onMounted(async () => {
 
 async function handleSubmit() {
   isLoading.value = true;
+  // Reset pesan error setiap kali submit
+  errorMessage.value = null;
+
   try {
     await $fetch("/api/squads/create-with-members", {
       method: "POST",
       body: form.value,
     });
 
-    // Hapus alert() dan ganti dengan menampilkan modal
     successMessage.value = `Squad "${form.value.display_name}" berhasil dibuat.`;
     isSuccessModalVisible.value = true;
   } catch (error: any) {
-    alert(error.data?.statusMessage || "Gagal membuat squad");
+    // HAPUS alert()
+    // alert(error.data?.statusMessage || "Gagal membuat squad");
+
+    // GANTI DENGAN INI: Set state errorMessage agar modal error muncul
+    errorMessage.value =
+      error.data?.statusMessage || "Terjadi kesalahan yang tidak diketahui.";
   } finally {
     isLoading.value = false;
   }
@@ -61,18 +68,31 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <AppModal :show="isSuccessModalVisible" @close="closeModalAndRedirect">
-    <template #header>
-      <h5 class="fw-semibold mb-0">Berhasil!</h5>
-    </template>
+  <AppModal
+    :show="isSuccessModalVisible"
+    @close="closeModalAndRedirect"
+    @confirm="closeModalAndRedirect"
+    confirm-text="OK"
+  >
+    <template #header><h5 class="fw-semibold mb-0">Berhasil!</h5></template>
+    <template #default
+      ><p>{{ successMessage }}</p></template
+    >
+  </AppModal>
 
-    <template #default>
-      <p>{{ successMessage }}</p>
-    </template>
-
-    <template #footer>
-      <button class="btn btn-primary" @click="closeModalAndRedirect">OK</button>
-    </template>
+  <AppModal
+    :show="!!errorMessage"
+    @close="errorMessage = null"
+    @confirm="errorMessage = null"
+    confirm-text="Tutup"
+    confirm-button-type="secondary"
+  >
+    <template #header
+      ><h5 class="fw-semibold mb-0 text-danger">Terjadi Kesalahan</h5></template
+    >
+    <template #default
+      ><p>{{ errorMessage }}</p></template
+    >
   </AppModal>
   <div class="card border-0 shadow-sm">
     <div

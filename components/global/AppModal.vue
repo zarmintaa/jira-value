@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { gsap } from "gsap";
+// Tambahkan console.log ini untuk memastikan script baru yang berjalan
+console.log("SCRIPT AppModal VERSI DEBUGGING (BORDER HIJAU) TELAH DIMUAT");
 
-// PERUBAHAN: Tambahkan props baru untuk tombol
 const props = withDefaults(
   defineProps<{
     show: boolean;
@@ -16,133 +16,74 @@ const props = withDefaults(
   },
 );
 
-// PERUBAHAN: Tambahkan 'confirm' ke dalam emits
 const emit = defineEmits(["close", "confirm"]);
-
-// ... (Fungsi onEnter dan onLeave tidak perlu diubah) ...
-function onEnter(element: Element, done: () => void) {
-  const el = element as HTMLElement;
-  const overlay = el;
-  const dialog = el.querySelector(".modal-dialog");
-  gsap.to(overlay, { backgroundColor: "rgba(0, 0, 0, 0.5)", duration: 0.3 });
-  gsap.fromTo(
-    dialog,
-    { opacity: 0, scale: 0.9, y: -30 },
-    {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      duration: 0.4,
-      ease: "power3.out",
-      onComplete: done,
-    },
-  );
-}
-
-function onLeave(element: Element, done: () => void) {
-  const el = element as HTMLElement;
-  const overlay = el;
-  const dialog = el.querySelector(".modal-dialog");
-  gsap.to(overlay, { backgroundColor: "rgba(0, 0, 0, 0)", duration: 0.3 });
-  gsap.to(dialog, {
-    opacity: 0,
-    scale: 0.95,
-    y: -20,
-    duration: 0.3,
-    ease: "power2.in",
-    onComplete: done,
-  });
-}
 </script>
 
 <template>
   <Teleport to="body">
-    <Transition :css="false" @enter="onEnter" @leave="onLeave">
-      <div v-if="show" class="modal-overlay" @click="emit('close')">
-        <div
-          class="modal-dialog shadow-lg"
-          @click.stop
-          role="dialog"
-          aria-modal="true"
-        >
-          <div v-if="$slots.header" class="modal-header">
-            <slot name="header" />
-            <button @click="emit('close')" class="btn-close" aria-label="Close">
-              &times;
-            </button>
-          </div>
-          <div class="modal-body">
-            <slot />
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-light" @click="emit('close')">
-              {{ cancelText }}
-            </button>
-            <button
-              class="btn"
-              :class="`btn-${confirmButtonType}`"
-              @click="emit('confirm')"
-            >
-              {{ confirmText }}
-            </button>
-          </div>
+    <div v-if="show" class="modal-overlay-debug" @click="emit('close')">
+      <div class="modal-dialog-debug" @click.stop>
+        <div class="modal-header">
+          <slot name="header" />
+          <button @click="emit('close')" class="btn-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <slot />
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-light" @click="emit('close')">
+            {{ cancelText }}
+          </button>
+          <button
+            class="btn"
+            :class="`btn-${confirmButtonType}`"
+            @click="emit('confirm')"
+          >
+            {{ confirmText }}
+          </button>
         </div>
       </div>
-    </Transition>
+    </div>
   </Teleport>
 </template>
 
 <style scoped>
-/* PERUBAHAN GAYA:
-  - .modal-overlay sekarang menggunakan flexbox untuk menengahkan dialog.
-  - .modal-dialog tidak lagi butuh position relative.
-*/
-.modal-overlay {
+/* Style minimalis untuk memastikan tidak ada konflik */
+.modal-overlay-debug {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0); /* Awalnya transparan total */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
+  z-index: 9999;
 }
-
-.modal-dialog {
+.modal-dialog-debug {
   background: white;
-  border-radius: 0.5rem;
-  min-width: 400px;
-  max-width: 90vw;
-  opacity: 0; /* Awalnya transparan, dianimasikan GSAP */
-}
-
-/* Sisa styling (header, body, footer) tidak berubah */
-.modal-header,
-.modal-body,
-.modal-footer {
-  /* ... sama seperti sebelumnya ... */
+  border-radius: 8px;
   padding: 1.5rem;
+  min-width: 400px;
+}
+.modal-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #dee2e6;
-  padding: 1rem 1.5rem;
-}
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  border-top: 1px solid #dee2e6;
-  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
 }
 .btn-close {
   background: none;
   border: none;
   font-size: 1.5rem;
-  line-height: 1;
-  color: #6c757d;
   cursor: pointer;
 }
+
+/* TANDA VISUAL YANG SANGAT JELAS */
 </style>

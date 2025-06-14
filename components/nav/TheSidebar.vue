@@ -3,6 +3,7 @@ import IconUserGroups from "~/components/icons/IconUserGroups.vue";
 import IconHome from "~/components/icons/IconHome.vue";
 import IconChartLineUp from "~/components/icons/IconChartLineUp.vue";
 import IconAdministrator from "~/components/icons/IconAdministrator.vue";
+import IconUser from "~/components/icons/IconUser.vue";
 
 const route = useRoute();
 
@@ -20,14 +21,21 @@ const menuItems = [
     icon: IconAdministrator,
   },
   {
-    name: "Ranking",
-    routeName: "ranking",
-    icon: IconChartLineUp,
+    name: "Users",
+    // Pastikan Anda punya file 'pages/old.vue'
+    routeName: "users", // Di Nuxt, nama rute biasanya kebab-case
+    icon: IconUser,
   },
+
   {
     name: "Squads",
     routeName: "squads",
     icon: IconUserGroups,
+  },
+  {
+    name: "Ranking",
+    routeName: "ranking",
+    icon: IconChartLineUp,
   },
   /*{
     name: "Error Debug",
