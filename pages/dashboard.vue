@@ -31,13 +31,12 @@ const { data, pending: isLoading } = useAsyncData(
   "kpi-data",
   () => $fetch("/api/dashboard/kpis", { query: dateRange.value }),
   {
-    // Opsi ini akan otomatis memanggil ulang API saat filter berubah
     watch: [selectedRange],
-    // 'default' memastikan variabel 'data' tidak pernah null dan memiliki struktur yang benar
     default: () => ({
       totalUsers: 0,
       totalSquads: 0,
       totalSubtasksCreated: 0,
+      totalHours: 0.0, // <-- TAMBAHKAN INI
     }),
   },
 );
@@ -50,11 +49,14 @@ onUnmounted(() => {
 });
 </script>
 
+<
 <template>
   <div>
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div
+      class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
+    >
       <h2 class="fw-bold mb-0">Dashboard</h2>
-      <div class="col-md-3 col-lg-2">
+      <div class="col-12 col-md-4 col-lg-3 col-xl-2">
         <select
           v-model="selectedRange"
           class="form-select"
@@ -67,15 +69,48 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="row g-4">
-      <div class="col-lg-4 col-md-6">
+    <div class="row g-3">
+      <div class="col-xl-4 col-md-6">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body d-flex align-items-center gap-3">
-            <div class="p-3 bg-primary bg-opacity-10 text-primary rounded">
+            <div class="p-3 bg-info bg-opacity-10 text-info rounded-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
+                fill="currentColor"
+                class="bi bi-clock-history"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .586.023l8 4a.5.5 0 0 1 0 .868l-8 4a.5.5 0 0 1-.586-.434V8a7 7 0 0 0 0-14z"
+                />
+                <path
+                  d="M8 3.5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5H4a.5.5 0 0 1 0-1h3.5V4a.5.5 0 0 1 .5-.5z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-muted mb-1">Total Estimasi Jam</p>
+              <div v-if="isLoading" class="placeholder-glow">
+                <span class="placeholder col-6"></span>
+              </div>
+              <h3 v-else class="fw-bold mb-0">
+                {{ data?.totalHours?.toFixed(1) ?? "0.0" }}h
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center gap-3">
+            <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
                 fill="currentColor"
                 class="bi bi-stack"
                 viewBox="0 0 16 16"
@@ -98,14 +133,14 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="col-lg-4 col-md-6">
+      <div class="col-xl-4 col-md-6">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body d-flex align-items-center gap-3">
-            <div class="p-3 bg-success bg-opacity-10 text-success rounded">
+            <div class="p-3 bg-success bg-opacity-10 text-success rounded-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 fill="currentColor"
                 class="bi bi-people-fill"
                 viewBox="0 0 16 16"
@@ -120,7 +155,7 @@ onUnmounted(() => {
               </svg>
             </div>
             <div>
-              <p class="text-muted mb-1">Total Pengguna</p>
+              <p class="text-muted mb-1">Total Member</p>
               <div v-if="isLoading" class="placeholder-glow">
                 <span class="placeholder col-6"></span>
               </div>
@@ -130,14 +165,14 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="col-lg-4 col-md-6">
+      <div class="col-xl-4 col-md-6">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body d-flex align-items-center gap-3">
-            <div class="p-3 bg-warning bg-opacity-10 text-warning rounded">
+            <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 fill="currentColor"
                 class="bi bi-collection-fill"
                 viewBox="0 0 16 16"

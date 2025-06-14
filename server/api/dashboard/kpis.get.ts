@@ -1,4 +1,4 @@
-// /server/api/dashboard/kpis.get.ts (VERSI FINAL YANG PALING ANDAL)
+// /server/api/dashboard/kpis.get.ts (Dengan Kalkulasi Total Jam)
 
 import { serverSupabaseClient } from "#supabase/server";
 import dayjs from "dayjs";
@@ -13,7 +13,6 @@ export default defineEventHandler(async (event) => {
   const supabase = await serverSupabaseClient(event);
 
   try {
-    // Ambil data dari Supabase
     const { count: totalUsers } = await supabase
       .from("jira_users")
       .select("*", { count: "exact", head: true });
@@ -21,52 +20,47 @@ export default defineEventHandler(async (event) => {
       .from("jira_squads")
       .select("*", { count: "exact", head: true });
 
-    // 1. Buat JQL sederhana tanpa filter tanggal
-    const jql = `project = "ITBOA" AND issuetype = Sub-task`;
+    const inclusiveEndDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DD");
+    const jql = `project = "ITBOA" AND issuetype = Sub-task AND created >= "${startDate}" AND created < "${inclusiveEndDate}"`;
 
-    // 2. Panggil proxy /api/jira/search untuk mengambil SEMUA subtask
-    // Proxy Anda sudah canggih karena bisa menangani paginasi
+    // 1. Minta field 'timeestimate' juga dari Jira
     const searchResult = await $fetch<{
-      issues: { fields: { created: string } }[];
+      issues: { fields: { created: string; timeestimate: number | null } }[];
     }>("/api/jira/search", {
       method: "POST",
       body: {
         jql,
-        fields: ["created"], // Kita hanya butuh field 'created' untuk memfilter
+        fields: ["created", "timeestimate"],
       },
     });
 
     if (!searchResult || !searchResult.issues) {
-      // Jika Jira tidak mengembalikan isu, langsung kirim 0
       return {
         totalUsers: totalUsers ?? 0,
         totalSquads: totalSquads ?? 0,
         totalSubtasksCreated: 0,
-        range: { startDate, endDate },
+        totalHours: 0,
       };
     }
 
-    // 3. Lakukan filter tanggal di sini menggunakan JavaScript (Day.js)
-    const filterStart = dayjs(startDate);
-    const filterEnd = dayjs(endDate);
-
-    const filteredSubtasks = searchResult.issues.filter((issue) => {
-      const createdDate = dayjs(issue.fields.created);
-      // Cek apakah tanggal 'created' berada di antara atau sama dengan startDate dan endDate
-      return (
-        !createdDate.isBefore(filterStart, "day") &&
-        !createdDate.isAfter(filterEnd, "day")
-      );
-    });
-
-    // 4. Jumlahnya adalah panjang dari array yang SUDAH TERFILTER
+    // Filter tanggal tetap sama, tapi sekarang kita punya data timeestimate
+    const filteredSubtasks = searchResult.issues; // Filter sudah dilakukan di JQL
     const totalSubtasksCreated = filteredSubtasks.length;
 
-    // Kembalikan hasil akhir
+    // 2. Kalkulasi BARU: jumlahkan semua timeestimate (dalam detik)
+    const totalTimeInSeconds = filteredSubtasks.reduce((total, issue) => {
+      return total + (issue.fields.timeestimate || 0);
+    }, 0);
+
+    // 3. Konversi detik ke jam, bulatkan ke satu desimal
+    const totalHours = parseFloat((totalTimeInSeconds / 3600).toFixed(1));
+
+    // 4. Tambahkan totalHours ke hasil akhir
     return {
       totalUsers: totalUsers ?? 0,
       totalSquads: totalSquads ?? 0,
       totalSubtasksCreated,
+      totalHours, // <-- PROPERTI BARU
       range: { startDate, endDate },
     };
   } catch (error: any) {
