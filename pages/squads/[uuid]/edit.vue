@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed, watchEffect } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import { useUsers } from "~/composable/jira/useUser";
 import { useSquads } from "~/composable/jira/useSquad";
 import type { JiraUserBasicInfo } from "~/types/supabase-table";
@@ -120,12 +120,12 @@ async function handleSubmit() {
 <template>
   <div>
     <AppModal
+      :cancel-text="null"
       :show="isSuccessModalVisible"
+      confirm-button-type="primary"
+      confirm-text="Kembali ke Detail"
       @close="closeModalAndReturn"
       @confirm="closeModalAndReturn"
-      confirm-text="Kembali ke Detail"
-      confirm-button-type="primary"
-      :cancel-text="null"
     >
       <template #header>
         <h5 class="fw-semibold mb-0 text-success">Berhasil!</h5>
@@ -136,12 +136,12 @@ async function handleSubmit() {
     </AppModal>
 
     <AppModal
+      :cancel-text="null"
       :show="!!errorMessage"
+      confirm-button-type="secondary"
+      confirm-text="Tutup"
       @close="errorMessage = null"
       @confirm="errorMessage = null"
-      confirm-text="Tutup"
-      confirm-button-type="secondary"
-      :cancel-text="null"
     >
       <template #header>
         <h5 class="fw-semibold mb-0 text-danger">Terjadi Kesalahan</h5>
@@ -162,32 +162,32 @@ async function handleSubmit() {
       </div>
       <form v-else @submit.prevent="handleSubmit">
         <div class="mb-3">
-          <label for="displayName" class="form-label">Nama Squad</label>
+          <label class="form-label" for="displayName">Nama Squad</label>
           <input
             id="displayName"
             v-model="form.display_name"
-            type="text"
             class="form-control"
             required
+            type="text"
           />
         </div>
         <div class="mb-3">
-          <label for="emailAddress" class="form-label"
+          <label class="form-label" for="emailAddress"
             >Email Kontak Squad</label
           >
           <input
             id="emailAddress"
             v-model="form.email_address"
-            type="email"
             class="form-control"
             required
+            type="email"
           />
         </div>
         <hr class="my-4" />
         <p class="text-muted">Edit Pemimpin dan Anggota</p>
 
         <div class="mb-3">
-          <label for="leadSelector" class="form-label">Pemimpin (Lead)</label>
+          <label class="form-label" for="leadSelector">Pemimpin (Lead)</label>
           <select
             id="leadSelector"
             v-model="form.lead_uuid"
@@ -222,7 +222,7 @@ async function handleSubmit() {
                 class="form-check-input"
                 type="checkbox"
               />
-              <label class="form-check-label" :for="`user-${user.uuid}`">{{
+              <label :for="`user-${user.uuid}`" class="form-check-label">{{
                 user.display_name
               }}</label>
             </div>
@@ -230,9 +230,9 @@ async function handleSubmit() {
         </div>
 
         <button
-          type="submit"
-          class="btn btn-primary mt-3"
           :disabled="isLoading"
+          class="btn btn-primary mt-3"
+          type="submit"
         >
           {{ isLoading ? "Menyimpan..." : "Simpan Perubahan" }}
         </button>

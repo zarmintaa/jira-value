@@ -1,10 +1,8 @@
 <script lang="ts" setup>
 import CardRank from "~/components/rank/CardRank.vue";
 import RankCardSkeleton from "~/components/rank/RankCardSkeleton.vue";
-import type { Ref } from "vue";
 import type { JiraIssue, JiraUser } from "~/types/jira.js";
-import { ref, onUnmounted } from "vue";
-import { dummyJiraUser } from "~/data/dummy-jira.js";
+import { onUnmounted, ref } from "vue";
 import { useErrorStore } from "~/stores/error-store";
 import { gsap } from "gsap";
 
@@ -12,12 +10,27 @@ import { gsap } from "gsap";
 const startDate = ref("");
 const endDate = ref("");
 const hasFiltered = ref(false);
-const sourceUsers: Ref<JiraUser[]> = ref(dummyJiraUser || []);
+
 let controller: AbortController | null = null;
 const rankedUsersData = ref<any[] | null>(null);
 const pending = ref(false);
 const errorStore = useErrorStore();
 const rankListContainer = ref<HTMLDivElement | null>(null); // <-- 2. Ref untuk kontainer daftar
+
+// Ambil data user dari Supabase SEKALI saat halaman dimuat
+const { data: sourceUsers, error: initialError } = await useAsyncData<
+  JiraUser[]
+>("source-jira-users-for-ranking", () => $fetch("/api/users/all"));
+
+// Jika gagal mengambil data awal, tampilkan error
+if (initialError.value) {
+  errorStore.addError({
+    type: "network",
+    title: "Gagal Memuat Data Pengguna",
+    message:
+      "Tidak bisa mengambil daftar pengguna dari database untuk memulai.",
+  });
+}
 
 // Konstanta ikon... (tidak berubah)
 const ICON_CLOCK = "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z";
@@ -117,8 +130,8 @@ const getRank = async (filterStartDate: string, filterEndDate: string) => {
 
     return {
       user: {
-        name: originalUser?.displayName || "Unknown User",
-        email: originalUser?.emailAddress || "",
+        name: originalUser?.display_name || "Unknown User",
+        email: originalUser?.email_address || "",
         avatar: enrichedIssue.fields.assignee?.avatarUrls["48x48"] || "",
       },
       stats: [

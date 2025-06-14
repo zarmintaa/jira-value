@@ -63,7 +63,7 @@ const errorMessage = computed(() => error.value?.message || null);
       class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
     >
       <h3 class="fw-semibold mb-0">Daftar User Jira</h3>
-      <NuxtLink to="/users/new" class="btn btn-primary">
+      <NuxtLink class="btn btn-primary" to="/users/new">
         + Tambah User
       </NuxtLink>
     </div>

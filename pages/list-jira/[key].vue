@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useRoute } from "vue-router";
-import type { JiraIssue, JiraSubtask } from "~/types/jira";
+import type { JiraIssue } from "~/types/jira";
 import { useSafeFetch } from "~/composable/useSafeFetch";
 import { formatReadableDate } from "~/utils/day";
 import dayjs from "dayjs";

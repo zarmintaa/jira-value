@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useUsers } from "~/composable/jira/useUser";
 import type { JiraUserBasicInfo } from "~/types/supabase-table";
 
@@ -70,9 +70,9 @@ async function handleSubmit() {
 <template>
   <AppModal
     :show="isSuccessModalVisible"
+    confirm-text="OK"
     @close="closeModalAndRedirect"
     @confirm="closeModalAndRedirect"
-    confirm-text="OK"
   >
     <template #header><h5 class="fw-semibold mb-0">Berhasil!</h5></template>
     <template #default
@@ -82,10 +82,10 @@ async function handleSubmit() {
 
   <AppModal
     :show="!!errorMessage"
+    confirm-button-type="secondary"
+    confirm-text="Tutup"
     @close="errorMessage = null"
     @confirm="errorMessage = null"
-    confirm-text="Tutup"
-    confirm-button-type="secondary"
   >
     <template #header
       ><h5 class="fw-semibold mb-0 text-danger">Terjadi Kesalahan</h5></template
@@ -99,7 +99,7 @@ async function handleSubmit() {
       class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
     >
       <h3 class="fw-semibold mb-0">New Squad</h3>
-      <NuxtLink to="/squads" class="btn btn-outline-secondary">
+      <NuxtLink class="btn btn-outline-secondary" to="/squads">
         &larr; Kembali ke List
       </NuxtLink>
     </div>
@@ -112,25 +112,25 @@ async function handleSubmit() {
       </div>
       <form v-else @submit.prevent="handleSubmit">
         <div class="mb-3">
-          <label for="displayName" class="form-label">Nama Squad</label>
+          <label class="form-label" for="displayName">Nama Squad</label>
           <input
             id="displayName"
             v-model="form.display_name"
-            type="text"
             class="form-control"
             required
+            type="text"
           />
         </div>
         <div class="mb-3">
-          <label for="emailAddress" class="form-label"
+          <label class="form-label" for="emailAddress"
             >Email Kontak Squad</label
           >
           <input
             id="emailAddress"
             v-model="form.email_address"
-            type="email"
             class="form-control"
             required
+            type="email"
           />
         </div>
 
@@ -139,14 +139,14 @@ async function handleSubmit() {
         <p class="text-muted">Pilih Lead dan Anggota (Opsional)</p>
 
         <div class="mb-3">
-          <label for="leadSelector" class="form-label"
+          <label class="form-label" for="leadSelector"
             >Calon Pemimpin (Lead)</label
           >
           <select
             id="leadSelector"
             v-model="form.lead_uuid"
-            class="form-select"
             :disabled="availableUsers.length === 0"
+            class="form-select"
           >
             <option :value="null">-- Tidak Dipilih --</option>
             <option
@@ -184,7 +184,7 @@ async function handleSubmit() {
                   class="form-check-input"
                   type="checkbox"
                 />
-                <label class="form-check-label" :for="`user-${user.uuid}`">
+                <label :for="`user-${user.uuid}`" class="form-check-label">
                   {{ user.display_name }}
                 </label>
               </div>
@@ -205,9 +205,9 @@ async function handleSubmit() {
         </div>
 
         <button
-          type="submit"
-          class="btn btn-primary mt-3"
           :disabled="isLoading"
+          class="btn btn-primary mt-3"
+          type="submit"
         >
           {{ isLoading ? "Menyimpan..." : "Simpan Squad" }}
         </button>

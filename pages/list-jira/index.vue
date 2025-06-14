@@ -3,7 +3,7 @@
 <script lang="ts" setup>
 // 1. Hapus import data dummy
 // import { dummyJiraUser } from "~/data/dummy-jira";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 // Hapus juga import JiraUser yang lama jika tidak dipakai di tempat lain
 // import type { JiraUser } from "~/types/jira";
 import TableView from "~/components/table/TableView.vue";

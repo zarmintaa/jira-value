@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useUsers } from "~/composable/jira/useUser";
 import { useSquads } from "~/composable/jira/useSquad";
 import type { NewUserPayload } from "~/types/dto/jira-dto";
@@ -73,9 +73,9 @@ async function handleSubmit() {
   <div>
     <AppModal
       :show="isSuccessModalVisible"
+      confirm-text="OK"
       @close="closeModalAndRedirect"
       @confirm="closeModalAndRedirect"
-      confirm-text="OK"
     >
       <template #header
         ><h5 class="fw-semibold mb-0 text-success">Berhasil!</h5></template
@@ -87,9 +87,9 @@ async function handleSubmit() {
 
     <AppModal
       :show="!!errorMessage"
-      @close="errorMessage = null"
-      confirm-text="Tutup"
       confirm-button-type="secondary"
+      confirm-text="Tutup"
+      @close="errorMessage = null"
     >
       <template #header
         ><h5 class="fw-semibold mb-0 text-danger">
@@ -106,7 +106,7 @@ async function handleSubmit() {
         class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
       >
         <h3 class="fw-semibold mb-0">Tambah User Jira Baru</h3>
-        <NuxtLink to="/users" class="btn btn-outline-secondary">
+        <NuxtLink class="btn btn-outline-secondary" to="/users">
           &larr; Kembali ke List
         </NuxtLink>
       </div>
@@ -114,54 +114,54 @@ async function handleSubmit() {
         <form @submit.prevent="handleSubmit">
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="key" class="form-label">Key</label>
+              <label class="form-label" for="key">Key</label>
               <input
                 id="key"
                 v-model="form.key"
-                type="text"
                 class="form-control"
                 placeholder="Contoh: ITBOA-12345"
                 required
+                type="text"
               />
             </div>
             <div class="col-md-6 mb-3">
-              <label for="displayName" class="form-label">Display Name</label>
+              <label class="form-label" for="displayName">Display Name</label>
               <input
                 id="displayName"
                 v-model="form.display_name"
-                type="text"
                 class="form-control"
                 placeholder="Contoh: BOA - Nama Lengkap"
                 required
+                type="text"
               />
             </div>
           </div>
 
           <div class="mb-3">
-            <label for="summary" class="form-label">Summary</label>
+            <label class="form-label" for="summary">Summary</label>
             <input
               id="summary"
               v-model="form.summary"
-              type="text"
               class="form-control"
               placeholder="Contoh: Nama Lengkap - NIP"
               required
+              type="text"
             />
           </div>
 
           <div class="mb-3">
-            <label for="emailAddress" class="form-label">Email Address</label>
+            <label class="form-label" for="emailAddress">Email Address</label>
             <input
               id="emailAddress"
               v-model="form.email_address"
-              type="email"
               class="form-control"
               required
+              type="email"
             />
           </div>
 
           <div class="mb-3">
-            <label for="squad" class="form-label"
+            <label class="form-label" for="squad"
               >Alokasi ke Squad (Opsional)</label
             >
             <div v-if="isFetchingSquads" class="text-muted small">
@@ -185,7 +185,7 @@ async function handleSubmit() {
           </div>
 
           <div class="mb-3">
-            <label for="description" class="form-label"
+            <label class="form-label" for="description"
               >Deskripsi (Opsional)</label
             >
             <textarea
@@ -197,9 +197,9 @@ async function handleSubmit() {
           </div>
 
           <button
-            type="submit"
-            class="btn btn-primary mt-3"
             :disabled="isLoading"
+            class="btn btn-primary mt-3"
+            type="submit"
           >
             {{ isLoading ? "Menyimpan..." : "Simpan User Jira" }}
           </button>

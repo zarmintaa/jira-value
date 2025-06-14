@@ -104,9 +104,9 @@ async function handleSubmit() {
   <div>
     <AppModal
       :show="isSuccessModalVisible"
+      confirm-text="OK"
       @close="closeModalAndReturnToDetail"
       @confirm="closeModalAndReturnToDetail"
-      confirm-text="OK"
     >
       <template #header
         ><h5 class="fw-semibold mb-0 text-success">Berhasil!</h5></template
@@ -115,9 +115,9 @@ async function handleSubmit() {
     </AppModal>
     <AppModal
       :show="!!errorMessage"
-      @close="errorMessage = null"
-      confirm-text="Tutup"
       confirm-button-type="secondary"
+      confirm-text="Tutup"
+      @close="errorMessage = null"
     >
       <template #header
         ><h5 class="fw-semibold mb-0 text-danger">
@@ -152,47 +152,46 @@ async function handleSubmit() {
         <form @submit.prevent="handleSubmit">
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="key" class="form-label">Key (Read-only)</label>
+              <label class="form-label" for="key">Key (Read-only)</label>
               <input
                 :value="data?.user?.key"
-                type="text"
                 class="form-control"
-                disabled
+                type="text"
               />
             </div>
             <div class="col-md-6 mb-3">
-              <label for="displayName" class="form-label">Display Name</label>
+              <label class="form-label" for="displayName">Display Name</label>
               <input
                 id="displayName"
                 v-model="form.display_name"
-                type="text"
                 class="form-control"
                 required
+                type="text"
               />
             </div>
           </div>
           <div class="mb-3">
-            <label for="summary" class="form-label">Summary</label>
+            <label class="form-label" for="summary">Summary</label>
             <input
               id="summary"
               v-model="form.summary"
-              type="text"
               class="form-control"
               required
+              type="text"
             />
           </div>
           <div class="mb-3">
-            <label for="emailAddress" class="form-label">Email Address</label>
+            <label class="form-label" for="emailAddress">Email Address</label>
             <input
               id="emailAddress"
               v-model="form.email_address"
-              type="email"
               class="form-control"
               required
+              type="email"
             />
           </div>
           <div class="mb-3">
-            <label for="squad" class="form-label">Alokasi Squad</label>
+            <label class="form-label" for="squad">Alokasi Squad</label>
             <select id="squad" v-model="form.squad_uuid" class="form-select">
               <option :value="null">-- Tidak Dialokasikan --</option>
               <option
@@ -205,7 +204,7 @@ async function handleSubmit() {
             </select>
           </div>
           <div class="mb-3">
-            <label for="description" class="form-label"
+            <label class="form-label" for="description"
               >Deskripsi (Opsional)</label
             >
             <textarea
@@ -216,9 +215,9 @@ async function handleSubmit() {
             ></textarea>
           </div>
           <button
-            type="submit"
-            class="btn btn-primary mt-3"
             :disabled="isLoading"
+            class="btn btn-primary mt-3"
+            type="submit"
           >
             {{ isLoading ? "Menyimpan..." : "Simpan Perubahan" }}
           </button>

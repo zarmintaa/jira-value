@@ -75,11 +75,11 @@ const errorMessage = computed(() => error.value?.message || null);
       class="card-header bg-white py-4 d-flex align-items-center justify-content-between"
     >
       <h3 class="fw-semibold mb-0">List Squad</h3>
-      <NuxtLink to="/squads/new"
-        ><button class="btn btn-primary text-decoration-none">
+      <NuxtLink to="/squads/new">
+        <button class="btn btn-primary text-decoration-none">
           + Tambah Squad
-        </button></NuxtLink
-      >
+        </button>
+      </NuxtLink>
     </div>
 
     <div class="card-body">

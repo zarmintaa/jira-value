@@ -27,6 +27,7 @@ function closeModalAndRedirect() {
   // Redirect terjadi di sini
   router.push("/squads");
 }
+
 // ... (sisa kode `useAsyncData`, `computed`, `getInitials` tetap sama) ...
 const {
   data: squad,
@@ -96,11 +97,11 @@ async function handleDeleteSquad() {
   <div>
     <AppModal
       :show="isDeleteModalVisible"
-      @close="isDeleteModalVisible = false"
-      @confirm="handleDeleteSquad"
-      confirm-text="Ya, Hapus"
       cancel-text="Batal"
       confirm-button-type="danger"
+      confirm-text="Ya, Hapus"
+      @close="isDeleteModalVisible = false"
+      @confirm="handleDeleteSquad"
     >
       <template #header>
         <h5 class="fw-semibold mb-0">Konfirmasi Hapus Squad</h5>
@@ -115,9 +116,9 @@ async function handleDeleteSquad() {
 
     <AppModal
       :show="isSuccessModalVisible"
+      confirm-text="OK"
       @close="closeModalAndRedirect"
       @confirm="closeModalAndRedirect"
-      confirm-text="OK"
     >
       <template #header>
         <h5 class="fw-semibold mb-0 text-success">Berhasil!</h5>
@@ -129,8 +130,8 @@ async function handleDeleteSquad() {
 
     <AppModal
       :show="!!errorMessage"
-      @close="errorMessage = null"
       confirm-text="Tutup"
+      @close="errorMessage = null"
     >
       <template #header>
         <h5 class="fw-semibold mb-0 text-danger">Terjadi Kesalahan</h5>
@@ -226,9 +227,9 @@ async function handleDeleteSquad() {
       <div class="card-body">
         <TableView
           :items="memberItems"
+          :itemsPerPage="10"
           :tHeader="memberHeaders"
           :tKey="memberKeys"
-          :itemsPerPage="10"
         />
       </div>
     </div>
