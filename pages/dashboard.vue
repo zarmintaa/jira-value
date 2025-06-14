@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { ref } from "vue";
-import SquadPerformanceTable from "~/components/dashboard/SquadPerformanceTable.vue";
-import KpiCard from "~/components/dashboard/KpiCard.vue";
-import BurnUpChart from "~/components/chart/BurnupChart.vue";
+import { ref, onUnmounted } from "vue";
+import SquadPerformanceTable from "~/components/dashboard/chart/SquadPerformanceTable.vue";
+import KpiCard from "~/components/dashboard/chart/KpiCard.vue";
+import BurnUpChart from "~/components/dashboard/chart/BurnupChart.vue";
 
-// State untuk form filter, kita kosongkan nilai awalnya
+// State untuk form filter
 const filterForm = ref({
   startDate: "",
   endDate: "",
@@ -12,10 +12,14 @@ const filterForm = ref({
 
 // State untuk menandai apakah filter sudah pernah dijalankan
 const hasFiltered = ref(false);
-const isLoading = ref(false);
-const error = ref<any>(null);
 let controller: AbortController | null = null;
 
+// ====================================================================
+// == PERUBAHAN UTAMA: State Loading & Data Terpisah untuk Setiap Widget ==
+// ====================================================================
+
+// 1. State untuk KPI Cards
+const kpiLoading = ref(false);
 const kpiData = ref({
   totalUsers: 0,
   totalSquads: 0,
@@ -23,66 +27,91 @@ const kpiData = ref({
   totalHours: 0.0,
 });
 
+// 2. State untuk Squad Performance Table
+const squadLoading = ref(false);
 const squadPerformanceData = ref([]);
-const burnupChartData = ref([]);
 
-async function fetchData() {
-  // Batalkan request sebelumnya jika ada yang sedang berjalan
-  controller?.abort();
-  // Buat controller baru untuk request kali ini
-  controller = new AbortController();
+// 3. State untuk Burn-up Chart
+const burnUpLoading = ref(false);
+const burnUpChartData = ref([]);
 
-  isLoading.value = true;
-  error.value = null;
+// ====================================================================
 
+// Fungsi terpisah untuk fetch KPI
+async function fetchKpis(signal: AbortSignal) {
+  kpiLoading.value = true;
   try {
-    // Siapkan semua promise untuk dijalankan secara paralel
-    const kpiPromise = $fetch("/api/dashboard/kpis", {
+    const result = await $fetch("/api/dashboard/kpis", {
       query: filterForm.value,
-      signal: controller.signal, // <-- Lewatkan signal
+      signal,
     });
-
-    const squadPromise = $fetch("/api/dashboard/squad-performance", {
-      query: filterForm.value,
-      signal: controller.signal, // <-- Lewatkan signal
-    });
-
-    const burnupPromise = $fetch("/api/dashboard/burnup-chart", {
-      query: filterForm.value,
-      signal: controller.signal, // <-- Lewatkan signal
-    });
-
-    // Jalankan semua request secara bersamaan dan tunggu semuanya selesai
-    const [kpiResult, squadResult, burnupResult] = await Promise.all([
-      kpiPromise,
-      squadPromise,
-      burnupPromise,
-    ]);
-
-    // Update state dengan data baru jika berhasil
-    kpiData.value = kpiResult;
-    squadPerformanceData.value = squadResult;
-    burnupChartData.value = burnupResult;
+    if (result) kpiData.value = result;
   } catch (err: any) {
-    // Jika error BUKAN karena kita sengaja membatalkannya, maka catat error
-    if (err.name !== "AbortError") {
-      error.value = err;
-      console.error("Terjadi kesalahan saat filter:", err);
-    }
+    if (err.name !== "AbortError") console.error("Error fetching KPIs:", err);
   } finally {
-    isLoading.value = false;
+    kpiLoading.value = false;
   }
 }
 
-// Fungsi untuk memicu kedua fetch saat tombol ditekan
+// Fungsi terpisah untuk fetch Performa Squad
+async function fetchSquadPerformance(signal: AbortSignal) {
+  squadLoading.value = true;
+  try {
+    const result = await $fetch("/api/dashboard/squad-performance", {
+      query: filterForm.value,
+      signal,
+    });
+    if (result) squadPerformanceData.value = result;
+  } catch (err: any) {
+    if (err.name !== "AbortError")
+      console.error("Error fetching Squad Performance:", err);
+  } finally {
+    squadLoading.value = false;
+  }
+}
+
+// Fungsi terpisah untuk fetch data Burn-up Chart
+async function fetchBurnupChart(signal: AbortSignal) {
+  burnUpLoading.value = true;
+  try {
+    const result = await $fetch("/api/dashboard/burnup-chart", {
+      query: filterForm.value,
+      signal,
+    });
+    if (result) burnUpChartData.value = result;
+  } catch (err: any) {
+    if (err.name !== "AbortError")
+      console.error("Error fetching Burnup Chart:", err);
+  } finally {
+    burnUpLoading.value = false;
+  }
+}
+
+// Fungsi utama yang dipanggil oleh tombol "Terapkan"
 function handleFilterSubmit() {
   if (!filterForm.value.startDate || !filterForm.value.endDate) {
     alert("Silakan isi Tanggal Mulai dan Tanggal Selesai.");
     return;
   }
   hasFiltered.value = true;
-  fetchData(); // Panggil fungsi fetch utama kita
+
+  // Batalkan semua request lama
+  controller?.abort();
+  // Buat controller baru untuk semua request baru
+  controller = new AbortController();
+  const signal = controller.signal;
+
+  // Panggil ketiga fungsi fetch secara independen.
+  // Kita tidak menggunakan `await` di sini agar ketiganya berjalan di latar belakang
+  // tanpa menghalangi satu sama lain.
+  fetchKpis(signal);
+  fetchSquadPerformance(signal);
+  fetchBurnupChart(signal);
 }
+
+const formLoading = computed(
+  () => kpiLoading.value || squadLoading.value || burnUpLoading.value,
+);
 
 onUnmounted(() => {
   controller?.abort();
@@ -129,29 +158,29 @@ onUnmounted(() => {
             <button
               type="submit"
               class="btn btn-primary w-100"
-              :disabled="isLoading"
+              :disabled="formLoading"
             >
               <span
-                v-if="isLoading"
+                v-if="formLoading"
                 class="spinner-border spinner-border-sm me-1"
               ></span>
-              {{ isLoading ? "Memuat..." : "Terapkan" }}
+              {{ formLoading ? "Memuat..." : "Terapkan" }}
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <KpiCard :kpis="kpiData" :loading="isLoading" />
+    <KpiCard :kpis="kpiData" :loading="kpiLoading" />
 
     <div class="mt-4">
-      <BurnUpChart :chart-data="burnupChartData" :loading="isLoading" />
+      <BurnUpChart :chart-data="burnUpChartData" :loading="burnUpLoading" />
     </div>
 
     <div class="mt-4">
       <SquadPerformanceTable
         :squads="squadPerformanceData"
-        :loading="isLoading"
+        :loading="squadLoading"
       />
     </div>
   </div>
