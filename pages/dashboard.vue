@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue";
 import dayjs from "dayjs";
+import SquadPerformanceTable from "~/components/dashboard/SquadPerformanceTable.vue";
 
 // State HANYA untuk filter, tidak ada lagi kpiData atau watch
 const selectedRange = ref("7d");
@@ -38,6 +39,16 @@ const { data, pending: isLoading } = useAsyncData(
       totalSubtasksCreated: 0,
       totalHours: 0.0,
     }),
+    lazy: true,
+  },
+);
+
+const { data: squadPerformanceData, pending: squadLoading } = useAsyncData(
+  "squad-performance-data",
+  () => $fetch("/api/dashboard/squad-performance", { query: dateRange.value }),
+  {
+    watch: [selectedRange],
+    default: () => [],
     lazy: true,
   },
 );
@@ -196,6 +207,13 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="mt-5">
+      <SquadPerformanceTable
+        :squads="squadPerformanceData"
+        :loading="squadLoading"
+      />
     </div>
   </div>
 </template>
