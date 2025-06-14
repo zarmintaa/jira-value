@@ -171,22 +171,33 @@ async function handleDeleteSquad() {
         </div>
       </div>
       <div class="card-body p-4">
-        <div class="row">
-          <div class="col-lg-7 border-end-lg">
-            <h5 class="fw-bold mb-3">{{ squad.display_name }}</h5>
-            <dl class="row">
-              <dt class="col-sm-4 text-muted">Email Kontak:</dt>
-              <dd class="col-sm-8">{{ squad.email_address }}</dd>
+        <h4 class="fw-bold mb-4 border-bottom pb-3">
+          {{ squad.display_name }}
+        </h4>
 
-              <dt class="col-sm-4 text-muted">Dibuat pada:</dt>
-              <dd class="col-sm-8">
+        <div class="row">
+          <div class="col-lg-7">
+            <dl class="row">
+              <dt class="col-sm-5 col-md-4 text-muted">Email Kontak:</dt>
+              <dd class="col-sm-7 col-md-8">{{ squad.email_address }}</dd>
+
+              <dt class="col-sm-5 col-md-4 text-muted">Dibuat pada:</dt>
+              <dd class="col-sm-7 col-md-8">
                 {{ formatReadableDate(squad.created_at) }}
               </dd>
+
+              <template v-if="squad.updated_at > squad.created_at">
+                <dt class="col-sm-5 col-md-4 text-muted">Di-update pada:</dt>
+                <dd class="col-sm-7 col-md-8">
+                  {{ formatReadableDate(squad.updated_at) }}
+                </dd>
+              </template>
             </dl>
           </div>
 
-          <div class="col-lg-5 mt-4 mt-lg-0 ps-lg-4">
+          <div class="col-lg-5 mt-4 mt-lg-0 ps-lg-4 border-start-lg">
             <h6 class="text-muted fw-semibold mb-3">Pemimpin Squad (Lead)</h6>
+
             <div v-if="squad.lead" class="d-flex align-items-center gap-3">
               <div
                 class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
@@ -199,6 +210,7 @@ async function handleDeleteSquad() {
                 <div class="text-muted small">{{ squad.lead.key }}</div>
               </div>
             </div>
+
             <div v-else class="text-muted fst-italic">Belum Ditentukan</div>
           </div>
         </div>

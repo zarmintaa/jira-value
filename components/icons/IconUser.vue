@@ -3,7 +3,7 @@
 <template>
   <svg
     aria-hidden="true"
-    class="w-6 h-6 text-black dark:text-white"
+    class="w-6 h-6"
     fill="currentColor"
     height="24"
     viewBox="0 0 24 24"

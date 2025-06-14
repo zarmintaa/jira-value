@@ -119,31 +119,35 @@ async function handleSubmit() {
 
 <template>
   <div>
-    <AppModal :show="isSuccessModalVisible" @close="closeModalAndReturn">
+    <AppModal
+      :show="isSuccessModalVisible"
+      @close="closeModalAndReturn"
+      @confirm="closeModalAndReturn"
+      confirm-text="Kembali ke Detail"
+      confirm-button-type="primary"
+      :cancel-text="null"
+    >
       <template #header>
-        <h5 class="fw-semibold mb-0">Berhasil!</h5>
+        <h5 class="fw-semibold mb-0 text-success">Berhasil!</h5>
       </template>
       <template #default>
         <p>{{ successMessage }}</p>
       </template>
-      <template #footer>
-        <button class="btn btn-primary" @click="closeModalAndReturn">
-          Kembali ke Detail
-        </button>
-      </template>
     </AppModal>
 
-    <AppModal :show="!!errorMessage" @close="errorMessage = null">
+    <AppModal
+      :show="!!errorMessage"
+      @close="errorMessage = null"
+      @confirm="errorMessage = null"
+      confirm-text="Tutup"
+      confirm-button-type="secondary"
+      :cancel-text="null"
+    >
       <template #header>
         <h5 class="fw-semibold mb-0 text-danger">Terjadi Kesalahan</h5>
       </template>
       <template #default>
         <p>{{ errorMessage }}</p>
-      </template>
-      <template #footer>
-        <button class="btn btn-secondary" @close="errorMessage = null">
-          Tutup
-        </button>
       </template>
     </AppModal>
   </div>
