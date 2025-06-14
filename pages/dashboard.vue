@@ -36,8 +36,9 @@ const { data, pending: isLoading } = useAsyncData(
       totalUsers: 0,
       totalSquads: 0,
       totalSubtasksCreated: 0,
-      totalHours: 0.0, // <-- TAMBAHKAN INI
+      totalHours: 0.0,
     }),
+    lazy: true,
   },
 );
 
