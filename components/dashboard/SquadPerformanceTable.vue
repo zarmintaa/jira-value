@@ -36,27 +36,27 @@ defineProps<{
               <tr v-for="n in 3" :key="`skel-${n}`">
                 <td>
                   <div class="placeholder-glow">
-                    <span class="placeholder col-8"></span>
+                    <span class="placeholder rounded-1 col-8"></span>
                   </div>
                 </td>
                 <td class="text-center">
                   <div class="placeholder-glow">
-                    <span class="placeholder col-4"></span>
+                    <span class="placeholder rounded-1 col-4"></span>
                   </div>
                 </td>
                 <td class="text-center">
                   <div class="placeholder-glow">
-                    <span class="placeholder col-4"></span>
+                    <span class="placeholder rounded-1 col-4"></span>
                   </div>
                 </td>
                 <td class="text-center">
                   <div class="placeholder-glow">
-                    <span class="placeholder col-4"></span>
+                    <span class="placeholder rounded-1 col-4"></span>
                   </div>
                 </td>
                 <td>
                   <div class="placeholder-glow">
-                    <span class="placeholder col-12"></span>
+                    <span class="placeholder rounded-1 col-12"></span>
                   </div>
                 </td>
               </tr>
