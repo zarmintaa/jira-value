@@ -182,14 +182,14 @@ onUnmounted(() => {
     <KpiCard :kpis="kpiData" :loading="kpiLoading" />
 
     <div class="mt-4">
-      <BurnUpChart :chart-data="burnUpChartData" :loading="burnUpLoading" />
-    </div>
-
-    <div class="mt-4">
       <SquadPerformanceTable
         :squads="squadPerformanceData"
         :loading="squadLoading"
       />
+    </div>
+
+    <div class="mt-4">
+      <BurnUpChart :chart-data="burnUpChartData" :loading="burnUpLoading" />
     </div>
   </div>
 </template>
