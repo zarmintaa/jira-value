@@ -11,8 +11,8 @@ const props = withDefaults(
   }>(),
   {
     type: "info", // Default tipe notifikasi
-    duration: 4000, // Default durasi tampil (4 detik)
-  },
+    duration: 10000, // Default durasi tampil (4 detik)
+  }
 );
 
 // Emit event 'close' saat notifikasi selesai
@@ -46,7 +46,7 @@ onMounted(() => {
   gsap.fromTo(
     notificationEl.value,
     { y: -100, opacity: 0 }, // dari posisi
-    { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, // ke posisi
+    { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" } // ke posisi
   );
 
   // Atur timer untuk menutup otomatis

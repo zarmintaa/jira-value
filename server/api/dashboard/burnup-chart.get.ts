@@ -1,4 +1,4 @@
-// /server/api/dashboard/burnup-chart.get.ts (VERSI BARU - SUPER CEPAT)
+// /server/api/dashboard/burnup-chart.get.ts (VERSI FINAL DENGAN PAGINASI SUPABASE)
 
 import { serverSupabaseClient } from "#supabase/server";
 import dayjs from "dayjs";
@@ -10,7 +10,6 @@ export default defineEventHandler(async (event) => {
   const startDate = query.startDate as string;
   const endDate = query.endDate as string;
 
-  // Validasi input tanggal
   if (!startDate || !endDate) {
     throw createError({
       statusCode: 400,
@@ -22,24 +21,47 @@ export default defineEventHandler(async (event) => {
 
   try {
     // ====================================================================
-    // PERUBAHAN UTAMA: TIDAK ADA LAGI $fetch ke JIRA
-    // Kita sekarang melakukan satu query cepat ke tabel cache di Supabase
+    // LANGKAH 1: Ambil SEMUA data dari cache dengan paginasi
     // ====================================================================
-    const { data: allSubtasks, error } = await supabase
-      .from("jira_subtasks_cache")
-      .select("created_at, resolved_at, status_name")
-      // Hanya ambil data yang relevan untuk perhitungan: yang dibuat sebelum akhir periode
-      .lte("created_at", dayjs(endDate).add(1, "day").format("YYYY-MM-DD"));
+    let allSubtasks: any[] = [];
+    let page = 0;
+    const pageSize = 1000; // Ukuran halaman sesuai limit default Supabase
 
-    if (error) throw error;
-    if (!allSubtasks) return [];
+    while (true) {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data: pageOfSubtasks, error } = await supabase
+        .from("jira_subtasks_cache")
+        .select("created_at, resolved_at, status_name")
+        .lte("created_at", dayjs(endDate).add(1, "day").format("YYYY-MM-DD"))
+        .order("created_at", { ascending: true })
+        .range(from, to); // <-- Mengambil data per halaman
+
+      if (error) throw error;
+
+      if (pageOfSubtasks && pageOfSubtasks.length > 0) {
+        allSubtasks = allSubtasks.concat(pageOfSubtasks);
+      }
+
+      // Jika hasil yang dikembalikan kurang dari ukuran halaman, berarti ini halaman terakhir
+      if (!pageOfSubtasks || pageOfSubtasks.length < pageSize) {
+        break;
+      }
+
+      page++;
+    }
+
+    console.log(
+      `Burn-up chart: Total subtask yang diambil dari cache Supabase: ${allSubtasks.length}`
+    );
+    if (allSubtasks.length === 0) return [];
 
     // ====================================================================
-    // LOGIKA PEMROSESAN: Tetap sama, tapi sekarang berjalan pada data lokal
-    // yang didapat dalam sekejap mata.
+    // LANGKAH 2: Proses data lengkap yang sudah diambil
+    // (Logika ini sama seperti versi optimal Anda sebelumnya)
     // ====================================================================
 
-    // Proses data dalam satu kali pass untuk mendapatkan perubahan harian.
     const dailyChanges = new Map<
       string,
       { scope: number; completed: number }
@@ -61,7 +83,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Hitung nilai kumulatif dengan efisien
     const chartData = [];
     let cumulativeScope = 0;
     let cumulativeCompleted = 0;
