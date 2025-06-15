@@ -4,6 +4,8 @@ import SquadPerformanceTable from "~/components/dashboard/chart/SquadPerformance
 import KpiCard from "~/components/dashboard/chart/KpiCard.vue";
 import BurnUpChart from "~/components/dashboard/chart/BurnupChart.vue";
 
+const errorStore = useErrorStore();
+
 // State untuk form filter
 const filterForm = ref({
   startDate: "",
@@ -48,6 +50,7 @@ async function fetchKpis(signal: AbortSignal) {
     if (result) kpiData.value = result;
   } catch (err: any) {
     if (err.name !== "AbortError") console.error("Error fetching KPIs:", err);
+    errorStore.addError(err, "Gagal Memuat KPI");
   } finally {
     kpiLoading.value = false;
   }
@@ -65,6 +68,7 @@ async function fetchSquadPerformance(signal: AbortSignal) {
   } catch (err: any) {
     if (err.name !== "AbortError")
       console.error("Error fetching Squad Performance:", err);
+    errorStore.addError(err, "Gagal Memuat Performa Squad");
   } finally {
     squadLoading.value = false;
   }
@@ -82,6 +86,7 @@ async function fetchBurnupChart(signal: AbortSignal) {
   } catch (err: any) {
     if (err.name !== "AbortError")
       console.error("Error fetching Burnup Chart:", err);
+    errorStore.addError(err, "Gagal Memuat Burn-up Chart");
   } finally {
     burnUpLoading.value = false;
   }
@@ -90,7 +95,10 @@ async function fetchBurnupChart(signal: AbortSignal) {
 // Fungsi utama yang dipanggil oleh tombol "Terapkan"
 function handleFilterSubmit() {
   if (!filterForm.value.startDate || !filterForm.value.endDate) {
-    alert("Silakan isi Tanggal Mulai dan Tanggal Selesai.");
+    errorStore.addError(
+      "Silakan isi Tanggal Mulai dan Tanggal Selesai.",
+      "Data Filter Tidak Lengkap",
+    );
     return;
   }
   hasFiltered.value = true;
