@@ -5,6 +5,7 @@ import KpiCard from "~/components/dashboard/chart/KpiCard.vue";
 import BurnUpChart from "~/components/dashboard/chart/BurnupChart.vue";
 
 const errorStore = useErrorStore();
+const notificationStore = useNotificationStore();
 
 // State untuk form filter
 const filterForm = ref({
@@ -36,6 +37,38 @@ const squadPerformanceData = ref([]);
 // 3. State untuk Burn-up Chart
 const burnUpLoading = ref(false);
 const burnUpChartData = ref([]);
+
+const isSyncing = ref(false); // State loading KHUSUS untuk tombol sync
+
+async function handleManualSync() {
+  // Jangan jalankan sync baru jika sedang berjalan
+  if (isSyncing.value) return;
+
+  isSyncing.value = true;
+  notificationStore.showNotification(
+    "Proses sinkronisasi dengan Jira dimulai...",
+    "info"
+  );
+
+  try {
+    const result = await $fetch("/api/sync/jira-subtasks", {
+      method: "POST",
+    });
+
+    notificationStore.showNotification(
+      result.message || "Sinkronisasi berhasil!",
+      "success"
+    );
+  } catch (error: any) {
+    console.error("Gagal melakukan sinkronisasi manual:", error);
+    notificationStore.showNotification(
+      error.data?.statusMessage || "Sinkronisasi gagal.",
+      "error"
+    );
+  } finally {
+    isSyncing.value = false;
+  }
+}
 
 // ====================================================================
 
@@ -97,7 +130,7 @@ function handleFilterSubmit() {
   if (!filterForm.value.startDate || !filterForm.value.endDate) {
     errorStore.addError(
       "Silakan isi Tanggal Mulai dan Tanggal Selesai.",
-      "Data Filter Tidak Lengkap",
+      "Data Filter Tidak Lengkap"
     );
     return;
   }
@@ -118,7 +151,7 @@ function handleFilterSubmit() {
 }
 
 const formLoading = computed(
-  () => kpiLoading.value || squadLoading.value || burnUpLoading.value,
+  () => kpiLoading.value || squadLoading.value || burnUpLoading.value
 );
 
 onUnmounted(() => {
@@ -133,6 +166,27 @@ onUnmounted(() => {
     </div>
 
     <div class="card shadow-sm mb-4">
+      <div
+        class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2"
+      >
+        <h5 class="fw-semibold mb-0">Filter Data</h5>
+        <div class="d-flex gap-2">
+          <button
+            class="btn btn-outline-primary"
+            @click="handleManualSync"
+            :disabled="isSyncing"
+          >
+            <span
+              v-if="isSyncing"
+              class="spinner-border spinner-border-sm me-1"
+              role="status"
+              aria-hidden="true"
+            ></span>
+            {{ isSyncing ? "Menyinkronkan..." : "Refresh Data dari Jira" }}
+          </button>
+        </div>
+      </div>
+
       <div class="card-body">
         <form
           @submit.prevent="handleFilterSubmit"
@@ -182,14 +236,14 @@ onUnmounted(() => {
     <KpiCard :kpis="kpiData" :loading="kpiLoading" />
 
     <div class="mt-4">
+      <BurnUpChart :chart-data="burnUpChartData" :loading="burnUpLoading" />
+    </div>
+
+    <div class="mt-4">
       <SquadPerformanceTable
         :squads="squadPerformanceData"
         :loading="squadLoading"
       />
-    </div>
-
-    <div class="mt-4">
-      <BurnUpChart :chart-data="burnUpChartData" :loading="burnUpLoading" />
     </div>
   </div>
 </template>
