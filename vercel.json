@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/dashboard/burnup-chart.get.ts": {
+      "maxDuration": 300
+    }
+  }
+}
