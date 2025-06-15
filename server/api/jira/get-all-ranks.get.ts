@@ -1,34 +1,34 @@
-// /server/api/get-all-ranks.get.ts (VERSI FINAL - MENGADOPSI LOGIKA ANDA)
+// /server/api/get-all-ranks.get.ts (VERSI FINAL DENGAN LOGIKA ANDA)
 
 import { serverSupabaseClient } from "#supabase/server";
 import type { JiraIssue } from "~/types/jira.js";
 
-// Fungsi fetchAllJiraPages dari /api/jira/search.post.ts Anda.
-// Kita bisa letakkan di sini atau di file utilitas terpisah.
+// Fungsi helper untuk mengambil semua halaman dari Jira
 async function fetchAllJiraPages(
   jql: string,
   fields: string[],
-  event: any,
+  event: any
 ): Promise<JiraIssue[]> {
-  const allIssues = await $fetch<{ issues: JiraIssue[] }>("/api/jira/search", {
-    method: "POST",
-    body: { jql, fields },
-  });
-  return allIssues.issues || [];
+  const allIssuesResponse = await $fetch<{ issues: JiraIssue[] }>(
+    "/api/jira/search",
+    {
+      method: "POST",
+      body: { jql, fields },
+    }
+  );
+  return allIssuesResponse.issues || [];
 }
 
 export default defineEventHandler(async (event) => {
+  const { startDate, endDate } = getQuery(event);
+  if (!startDate || !endDate) return [];
+
+  console.log("Call get ranks!");
+
   const supabase = await serverSupabaseClient(event);
 
-  // 1. Ambil filter tanggal dari query, jika tidak ada, jangan proses.
-  const query = getQuery(event);
-  const { startDate, endDate } = query;
-  if (!startDate || !endDate) {
-    return []; // Wajib ada filter tanggal
-  }
-
   try {
-    // 2. Ambil semua user dari Supabase
+    // LANGKAH A: Ambil semua user dari Supabase (Menggantikan dummyUser)
     const { data: usersFromSupabase, error: supabaseError } = await supabase
       .from("jira_users")
       .select("key, display_name, email_address");
@@ -36,34 +36,37 @@ export default defineEventHandler(async (event) => {
     if (supabaseError) throw supabaseError;
     if (!usersFromSupabase || usersFromSupabase.length === 0) return [];
 
-    // 3. Siapkan userMap dan parentIssueKeys (logika Anda)
+    // LANGKAH B: Semua logika dari fungsi getRank Anda sekarang ada di sini
     const userMap = new Map(
       usersFromSupabase.map((u) => [
         u.key,
         { displayName: u.display_name, emailAddress: u.email_address },
-      ]),
+      ])
     );
     const parentIssueKeys = usersFromSupabase.map((user) => user.key);
 
-    if (parentIssueKeys.length === 0) return [];
-
-    // 4. Fetch Parent Issues (logika Anda)
     const parentJql = `key in (${parentIssueKeys.join(",")})`;
     const jiraIssues = await fetchAllJiraPages(
       parentJql,
       ["summary", "status", "assignee", "issuetype", "subtasks"],
-      event,
+      event
     );
 
-    // 5. Fetch SEMUA Subtasks (logika Anda, menggunakan proxy paginasi)
-    const subtaskJql = `parent in (${parentIssueKeys.join(",")})`;
-    const allFetchedSubtasks = await fetchAllJiraPages(
-      subtaskJql,
-      ["summary", "status", "parent", "created", "timeestimate"],
-      event,
+    const allSubtaskKeys = jiraIssues.flatMap((issue) =>
+      (issue.fields.subtasks || []).map((subtask) => subtask.key)
     );
+    let allFetchedSubtasks: JiraIssue[] = [];
 
-    // 6. Grouping dan Enrichment (logika Anda)
+    if (allSubtaskKeys.length > 0) {
+      const uniqueKeys = [...new Set(allSubtaskKeys)];
+      const subtaskJql = `key in (${uniqueKeys.join(",")})`;
+      allFetchedSubtasks = await fetchAllJiraPages(
+        subtaskJql,
+        ["summary", "status", "parent", "created", "timeestimate"],
+        event
+      );
+    }
+
     const subtasksByParentKey = new Map<string, JiraIssue[]>();
     for (const subtask of allFetchedSubtasks) {
       const parentKey = subtask.fields.parent?.key;
@@ -73,6 +76,7 @@ export default defineEventHandler(async (event) => {
         subtasksByParentKey.get(parentKey)!.push(subtask);
       }
     }
+
     const enrichedJiraIssues = jiraIssues.map((parent) => ({
       ...parent,
       fields: {
@@ -81,10 +85,9 @@ export default defineEventHandler(async (event) => {
       },
     }));
 
-    // 7. Proses, Filter, dan Kalkulasi Stats (logika Anda)
     const filterStart = new Date(startDate as string);
     const filterEnd = new Date(endDate as string);
-    filterEnd.setDate(filterEnd.getDate() + 1); // Agar inklusif
+    filterEnd.setDate(filterEnd.getDate() + 1);
 
     const processedData = enrichedJiraIssues.map((enrichedIssue) => {
       const filteredSubtasks = enrichedIssue.fields.subtasks.filter((st) => {
@@ -93,14 +96,14 @@ export default defineEventHandler(async (event) => {
       });
 
       const uniqueActiveDays = new Set(
-        filteredSubtasks.map((st) => st.fields.created.slice(0, 10)),
+        filteredSubtasks.map((st) => st.fields.created.slice(0, 10))
       ).size;
       const totalTimeInSeconds = filteredSubtasks.reduce(
         (total, st) => total + (st.fields.timeestimate || 0),
-        0,
+        0
       );
       const subtasksDone = filteredSubtasks.filter(
-        (st) => st.fields.status.name === "Done",
+        (st) => st.fields.status.name === "Done"
       ).length;
       const totalSubtasks = filteredSubtasks.length;
       const doneRatio = totalSubtasks > 0 ? subtasksDone / totalSubtasks : 0;
@@ -109,7 +112,7 @@ export default defineEventHandler(async (event) => {
 
       return {
         user: {
-          name: originalUser?.displayName || "Unknown",
+          name: originalUser?.displayName || "Unknown User",
           email: originalUser?.emailAddress || "",
           avatar: enrichedIssue.fields.assignee?.avatarUrls["48x48"] || "",
         },
@@ -129,7 +132,6 @@ export default defineEventHandler(async (event) => {
       };
     });
 
-    // 8. Urutkan (logika Anda)
     processedData.sort((a, b) => {
       const pointDiff = b.sortable.points - a.sortable.points;
       if (pointDiff !== 0) return pointDiff;
@@ -138,7 +140,6 @@ export default defineEventHandler(async (event) => {
       return b.sortable.ratio - a.sortable.ratio;
     });
 
-    // 9. Finalisasi (logika Anda)
     const finalData = processedData.map((item, index) => {
       const { sortable, ...rest } = item;
       return { ...rest, rank: index + 1 };
@@ -146,7 +147,7 @@ export default defineEventHandler(async (event) => {
 
     return finalData;
   } catch (error: any) {
-    console.error("Error di get-all-ranks:", error.data || error);
+    console.error("Error di get-all-ranks:", error);
     throw createError({
       statusCode: 500,
       statusMessage: `Gagal memproses data ranking: ${error.message}`,

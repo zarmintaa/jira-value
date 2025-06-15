@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync/jira-subtasks",
+      "schedule": "*/2 * * * *"
+    }
+  ],
+  "functions": {
+    "api/sync/jira-subtasks.post": {
+      "maxDuration": 60
+    }
+  }
+}

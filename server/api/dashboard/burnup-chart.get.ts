@@ -1,75 +1,80 @@
-// /server/api/dashboard/burnup-chart.get.ts (VERSI OPTIMAL)
+// /server/api/dashboard/burnup-chart.get.ts (VERSI BARU - SUPER CEPAT)
 
+import { serverSupabaseClient } from "#supabase/server";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
 dayjs.extend(isSameOrBefore);
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const startDate =
-    (query.startDate as string) ||
-    dayjs().subtract(30, "day").format("YYYY-MM-DD");
-  const endDate = (query.endDate as string) || dayjs().format("YYYY-MM-DD");
+  const startDate = query.startDate as string;
+  const endDate = query.endDate as string;
+
+  // Validasi input tanggal
+  if (!startDate || !endDate) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "startDate dan endDate wajib diisi.",
+    });
+  }
+
+  const supabase = await serverSupabaseClient(event);
 
   try {
-    // OPTIMASI #1: Filter JQL agar tidak mengambil semua data dari awal zaman.
-    // Kita hanya butuh isu yang dibuat sebelum atau pada tanggal akhir filter.
-    const inclusiveEndDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DD");
-    const jql = `project = "ITBOA" AND issuetype = Sub-task AND created < "${inclusiveEndDate}" ORDER BY created ASC`;
+    // ====================================================================
+    // PERUBAHAN UTAMA: TIDAK ADA LAGI $fetch ke JIRA
+    // Kita sekarang melakukan satu query cepat ke tabel cache di Supabase
+    // ====================================================================
+    const { data: allSubtasks, error } = await supabase
+      .from("jira_subtasks_cache")
+      .select("created_at, resolved_at, status_name")
+      // Hanya ambil data yang relevan untuk perhitungan: yang dibuat sebelum akhir periode
+      .lte("created_at", dayjs(endDate).add(1, "day").format("YYYY-MM-DD"));
 
-    const searchResult = await $fetch<{ issues: any[] }>("/api/jira/search", {
-      method: "POST",
-      body: {
-        jql,
-        fields: ["created", "resolutiondate", "status"],
-      },
-    });
+    if (error) throw error;
+    if (!allSubtasks) return [];
 
-    if (!searchResult || !searchResult.issues) {
-      return [];
-    }
-    const allSubtasks = searchResult.issues;
+    // ====================================================================
+    // LOGIKA PEMROSESAN: Tetap sama, tapi sekarang berjalan pada data lokal
+    // yang didapat dalam sekejap mata.
+    // ====================================================================
 
-    // OPTIMASI #2: Proses data dalam satu kali pass untuk mendapatkan perubahan harian.
+    // Proses data dalam satu kali pass untuk mendapatkan perubahan harian.
     const dailyChanges = new Map<
       string,
       { scope: number; completed: number }
     >();
 
     for (const issue of allSubtasks) {
-      const createdDate = dayjs(issue.fields.created).format("YYYY-MM-DD");
+      const createdDate = dayjs(issue.created_at).format("YYYY-MM-DD");
 
-      // Tambahkan 1 ke scope pada hari isu dibuat
       if (!dailyChanges.has(createdDate))
         dailyChanges.set(createdDate, { scope: 0, completed: 0 });
       dailyChanges.get(createdDate)!.scope++;
 
-      // Tambahkan 1 ke completed pada hari isu diselesaikan
-      const isDone = issue.fields.status?.name === "Done";
-      if (isDone && issue.fields.resolutiondate) {
-        const resolutionDate = dayjs(issue.fields.resolutiondate).format(
-          "YYYY-MM-DD",
-        );
+      const isDone = issue.status_name === "Done";
+      if (isDone && issue.resolved_at) {
+        const resolutionDate = dayjs(issue.resolved_at).format("YYYY-MM-DD");
         if (!dailyChanges.has(resolutionDate))
           dailyChanges.set(resolutionDate, { scope: 0, completed: 0 });
         dailyChanges.get(resolutionDate)!.completed++;
       }
     }
 
-    // OPTIMASI #3: Hitung nilai kumulatif dengan efisien
+    // Hitung nilai kumulatif dengan efisien
     const chartData = [];
     let cumulativeScope = 0;
     let cumulativeCompleted = 0;
 
     // Hitung state awal sebelum startDate
     for (const issue of allSubtasks) {
-      if (dayjs(issue.fields.created).isBefore(dayjs(startDate))) {
+      if (dayjs(issue.created_at).isBefore(dayjs(startDate))) {
         cumulativeScope++;
-        const isDone = issue.fields.status?.name === "Done";
+        const isDone = issue.status_name === "Done";
         if (
           isDone &&
-          issue.fields.resolutiondate &&
-          dayjs(issue.fields.resolutiondate).isBefore(dayjs(startDate))
+          issue.resolved_at &&
+          dayjs(issue.resolved_at).isBefore(dayjs(startDate))
         ) {
           cumulativeCompleted++;
         }
@@ -99,10 +104,10 @@ export default defineEventHandler(async (event) => {
 
     return chartData;
   } catch (error: any) {
-    console.error("Error di Burnup Chart Endpoint:", error.data || error);
+    console.error("Error di Burnup Chart Endpoint:", error);
     throw createError({
       statusCode: 500,
-      statusMessage: "Gagal memproses data grafik.",
+      statusMessage: "Gagal memproses data grafik dari cache.",
     });
   }
 });

@@ -48,13 +48,13 @@ const getRank = async (filterStartDate: string, filterEndDate: string) => {
   const userMap = new Map(sourceUsers.value.map((user) => [user.key, user]));
 
   const parentFetchPromises = sourceUsers.value.map((user) =>
-    $fetch<JiraIssue>(`/api/jira/${user.key}`, { signal }),
+    $fetch<JiraIssue>(`/api/jira/${user.key}`, { signal })
   );
   const jiraIssues = await Promise.all(parentFetchPromises);
 
   let allFetchedSubtasks: JiraIssue[] = [];
   const allSubtaskKeys = jiraIssues.flatMap((issue) =>
-    (issue.fields.subtasks || []).map((subtask) => subtask.key),
+    (issue.fields.subtasks || []).map((subtask) => subtask.key)
   );
 
   if (allSubtaskKeys.length > 0) {
@@ -73,7 +73,7 @@ const getRank = async (filterStartDate: string, filterEndDate: string) => {
         method: "POST",
         signal,
         body: { jql, fields: requiredFields, maxResults: uniqueKeys.length },
-      },
+      }
     );
     allFetchedSubtasks = searchResult.issues;
   }
@@ -114,14 +114,14 @@ const getRank = async (filterStartDate: string, filterEndDate: string) => {
 
     // Kalkulasi akan secara alami menghasilkan 0 jika filteredSubtasks kosong
     const uniqueActiveDays = new Set(
-      filteredSubtasks.map((st) => st.fields.created.slice(0, 10)),
+      filteredSubtasks.map((st) => st.fields.created.slice(0, 10))
     ).size;
     const totalTimeInSeconds = filteredSubtasks.reduce(
       (total, subtask) => total + (subtask.fields.timeestimate || 0),
-      0,
+      0
     );
     const subtasksDone = filteredSubtasks.filter(
-      (st) => st.fields.status.name === "Done",
+      (st) => st.fields.status.name === "Done"
     ).length;
     const totalSubtasks = filteredSubtasks.length;
     const doneRatio = totalSubtasks > 0 ? subtasksDone / totalSubtasks : 0;
